@@ -1,5 +1,0 @@
-package com.example.wallet.domain;
-
-public enum WalletCommandError {
-  WALLET_ALREADY_EXISTS, WALLET_NOT_FOUND, NOT_SUFFICIENT_FUNDS, DEPOSIT_LE_ZERO, DUPLICATED_COMMAND, EXPENSE_NOT_FOUND
-}
