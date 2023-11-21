@@ -1,7 +1,7 @@
 package com.example.cinema.choreography;
 
-import com.example.cinema.CinemaDomainModel;
 import com.example.cinema.ShowEntity;
+import com.example.cinema.model.Show;
 import com.example.wallet.WalletEntity;
 import kalix.javasdk.action.Action;
 import kalix.javasdk.annotations.Subscribe;
@@ -12,8 +12,8 @@ import org.springframework.context.annotation.Profile;
 
 import java.util.concurrent.CompletionStage;
 
-import static com.example.wallet.WalletDomainModel.WalletEvent.*;
-import static com.example.cinema.CinemaApiModel.*;
+import static com.example.wallet.model.WalletEvent.*;
+import static com.example.cinema.model.CinemaApiModel.*;
 
 @Profile("choreography")
 @Subscribe.EventSourcedEntity(value = WalletEntity.class, ignoreUnknown = true)
@@ -66,12 +66,12 @@ public class CompleteReservationAction extends Action {
   //Value Entity as a read model
   private CompletionStage<String> getShowIdBy(String reservationId) {
     return componentClient.forValueEntity(reservationId).call(ReservationEntity::get).execute()
-      .thenApply(CinemaDomainModel.Reservation::showId);
+      .thenApply(Show.Reservation::showId);
   }
 
   //View as a read model
-  private CompletionStage<String> getShowIdBy2(String reservationId) {
-    return componentClient.forView().call(ShowByReservationView::getShow).params(reservationId).execute()
-      .thenApply(CinemaDomainModel.ShowByReservation::showId);
-  }
+//  private CompletionStage<String> getShowIdBy2(String reservationId) {
+//    return componentClient.forView().call(ShowByReservationView::getShow).params(reservationId).execute()
+//      .thenApply(CinemaDomainModel.ShowByReservation::showId);
+//  }
 }

@@ -19,8 +19,8 @@ import java.util.concurrent.CompletionStage;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.time.Duration.ofSeconds;
 
-import static com.example.cinema.CinemaDomainModel.ShowEvent.*;
-import static com.example.wallet.WalletApiModel.WalletCommand.*;
+import static com.example.cinema.model.ShowEvent.*;
+import static com.example.wallet.model.WalletApiModel.WalletCommand.*;
 
 @Profile("choreography")
 @Subscribe.EventSourcedEntity(value = ShowEntity.class, ignoreUnknown = true)

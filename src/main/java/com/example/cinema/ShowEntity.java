@@ -1,5 +1,7 @@
 package com.example.cinema;
 
+import com.example.cinema.model.Show;
+import com.example.cinema.model.ShowEvent;
 import kalix.javasdk.annotations.EventHandler;
 import kalix.javasdk.annotations.Id;
 import kalix.javasdk.annotations.TypeId;
@@ -15,21 +17,21 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.util.function.Predicate;
 
-import static com.example.cinema.CinemaApiModel.ShowCommandError.CANCELLING_CONFIRMED_RESERVATION;
-import static com.example.cinema.CinemaApiModel.ShowCommandError.DUPLICATED_COMMAND;
-import static com.example.cinema.CinemaApiModel.ShowCommandError.RESERVATION_NOT_FOUND;
+import static com.example.cinema.model.CinemaApiModel.ShowCommandError.CANCELLING_CONFIRMED_RESERVATION;
+import static com.example.cinema.model.CinemaApiModel.ShowCommandError.DUPLICATED_COMMAND;
+import static com.example.cinema.model.CinemaApiModel.ShowCommandError.RESERVATION_NOT_FOUND;
 import static kalix.javasdk.StatusCode.ErrorCode.BAD_REQUEST;
 import static kalix.javasdk.StatusCode.ErrorCode.NOT_FOUND;
 
-import static com.example.cinema.CinemaApiModel.ShowCommand.*;
-import static com.example.cinema.CinemaApiModel.*;
-import static com.example.cinema.CinemaApiModel.Response.*;
-import static com.example.cinema.CinemaDomainModel.ShowEvent.*;
+import static com.example.cinema.model.CinemaApiModel.ShowCommand.*;
+import static com.example.cinema.model.CinemaApiModel.*;
+import static com.example.cinema.model.CinemaApiModel.Response.*;
+import static com.example.cinema.model.ShowEvent.*;
 
 @Id("id")
 @TypeId("cinema-show")
 @RequestMapping("/cinema-show/{id}")
-public class ShowEntity extends EventSourcedEntity<CinemaDomainModel.Show, CinemaDomainModel.ShowEvent> {
+public class ShowEntity extends EventSourcedEntity<Show, ShowEvent> {
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -38,7 +40,7 @@ public class ShowEntity extends EventSourcedEntity<CinemaDomainModel.Show, Cinem
     if (currentState() != null) {
       return effects().error("show already exists", BAD_REQUEST);
     } else {
-      return CinemaDomainModel.ShowCreator.create(id, createShow).fold(
+      return Show.ShowCreator.create(id, createShow).fold(
         error -> errorEffect(error, createShow),
         showCreated -> persistEffect(showCreated, "show created")
       );
@@ -85,7 +87,7 @@ public class ShowEntity extends EventSourcedEntity<CinemaDomainModel.Show, Cinem
     }
   }
 
-  private Effect<Response> persistEffect(CinemaDomainModel.ShowEvent showEvent, String message) {
+  private Effect<Response> persistEffect(ShowEvent showEvent, String message) {
     return effects()
       .emitEvent(showEvent)
       .thenReply(__ -> Success.of(message));
@@ -114,7 +116,7 @@ public class ShowEntity extends EventSourcedEntity<CinemaDomainModel.Show, Cinem
   }
 
   @GetMapping("/seat-status/{seatNumber}")
-  public Effect<CinemaDomainModel.SeatStatus> getSeatStatus(@PathVariable int seatNumber) {
+  public Effect<Show.SeatStatus> getSeatStatus(@PathVariable int seatNumber) {
     if (currentState() == null) {
       return effects().error("show not found", NOT_FOUND);
     } else {
@@ -126,27 +128,27 @@ public class ShowEntity extends EventSourcedEntity<CinemaDomainModel.Show, Cinem
   }
 
   @EventHandler
-  public CinemaDomainModel.Show onEvent(ShowCreated showCreated) {
-    return CinemaDomainModel.Show.create(showCreated);
+  public Show onEvent(ShowCreated showCreated) {
+    return Show.create(showCreated);
   }
 
   @EventHandler
-  public CinemaDomainModel.Show onEvent(SeatReserved seatReserved) {
+  public Show onEvent(SeatReserved seatReserved) {
     return currentState().apply(seatReserved);
   }
 
   @EventHandler
-  public CinemaDomainModel.Show onEvent(SeatReservationCancelled seatReservationCancelled) {
+  public Show onEvent(SeatReservationCancelled seatReservationCancelled) {
     return currentState().apply(seatReservationCancelled);
   }
 
   @EventHandler
-  public CinemaDomainModel.Show onEvent(SeatReservationPaid seatReservationPaid) {
+  public Show onEvent(SeatReservationPaid seatReservationPaid) {
     return currentState().apply(seatReservationPaid);
   }
 
   @EventHandler
-  public CinemaDomainModel.Show onEvent(CancelledReservationConfirmed cancelledReservationConfirmed) {
+  public Show onEvent(CancelledReservationConfirmed cancelledReservationConfirmed) {
     return currentState().apply(cancelledReservationConfirmed);
   }
 }

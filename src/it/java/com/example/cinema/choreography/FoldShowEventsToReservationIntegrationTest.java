@@ -2,7 +2,7 @@ package com.example.cinema.choreography;
 
 import com.example.Main;
 import com.example.cinema.Calls;
-import com.example.cinema.CinemaDomainModel;
+import com.example.cinema.model.Show;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,18 +54,18 @@ class FoldShowEventsToReservationIntegrationTest extends KalixIntegrationTestKit
       .atMost(10, TimeUnit.of(SECONDS))
       .ignoreExceptions()
       .untilAsserted(() -> {
-        CinemaDomainModel.Reservation result = getReservation(reservationId1).getBody();
-        assertThat(result).isEqualTo(new CinemaDomainModel.Reservation(reservationId1, showId, walletId, new BigDecimal(100)));
+        Show.Reservation result = getReservation(reservationId1).getBody();
+        assertThat(result).isEqualTo(new Show.Reservation(reservationId1, showId, walletId, new BigDecimal(100)));
 
-        CinemaDomainModel.Reservation result2 = getReservation(reservationId2).getBody();
-        assertThat(result2).isEqualTo(new CinemaDomainModel.Reservation(reservationId2, showId, walletId, new BigDecimal(100)));
+        Show.Reservation result2 = getReservation(reservationId2).getBody();
+        assertThat(result2).isEqualTo(new Show.Reservation(reservationId2, showId, walletId, new BigDecimal(100)));
       });
   }
 
-  private ResponseEntity<CinemaDomainModel.Reservation> getReservation(String reservationId) {
+  private ResponseEntity<Show.Reservation> getReservation(String reservationId) {
     return webClient.get().uri("/reservation/" + reservationId)
       .retrieve()
-      .toEntity(CinemaDomainModel.Reservation.class)
+      .toEntity(Show.Reservation.class)
       .onErrorResume(WebClientResponseException.class, error -> {
         if (error.getStatusCode().is4xxClientError()) {
           return Mono.just(ResponseEntity.status(HttpStatus.NOT_FOUND).body(null));

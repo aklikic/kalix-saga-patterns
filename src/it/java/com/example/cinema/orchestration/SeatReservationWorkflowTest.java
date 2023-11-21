@@ -2,9 +2,9 @@ package com.example.cinema.orchestration;
 
 import com.example.Main;
 import com.example.cinema.Calls;
-import com.example.cinema.CinemaDomainModel;
+import com.example.cinema.model.Show;
 import com.example.cinema.orchestration.SeatReservationWorkflow.ReserveSeat;
-import com.example.wallet.WalletApiModel;
+import com.example.wallet.model.WalletApiModel;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -18,13 +18,13 @@ import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 import static com.example.cinema.TestUtils.randomId;
-import static com.example.cinema.CinemaDomainModel.SeatReservationStatus.SEAT_RESERVATION_REFUNDED;
+import static com.example.cinema.model.Show.SeatReservationStatus.SEAT_RESERVATION_REFUNDED;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.HttpStatus.OK;
 import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 
-import static com.example.wallet.WalletApiModel.WalletCommand.*;
+import static com.example.wallet.model.WalletApiModel.WalletCommand.*;
 
 
 @DirtiesContext
@@ -61,14 +61,14 @@ class SeatReservationWorkflowTest {
       .atMost(10, TimeUnit.of(SECONDS))
       .ignoreExceptions()
       .untilAsserted(() -> {
-        CinemaDomainModel.SeatReservationStatus status = getReservationStatus(reservationId);
-        assertThat(status).isEqualTo(CinemaDomainModel.SeatReservationStatus.COMPLETED);
+        Show.SeatReservationStatus status = getReservationStatus(reservationId);
+        assertThat(status).isEqualTo(Show.SeatReservationStatus.COMPLETED);
 
         WalletApiModel.WalletResponse walletResponse = calls.getWallet(walletId);
         assertThat(walletResponse.balance()).isEqualTo(new BigDecimal(200 - 100));
 
-        CinemaDomainModel.SeatStatus seatStatus = calls.getSeatStatus(showId, seatNumber);
-        assertThat(seatStatus).isEqualTo(CinemaDomainModel.SeatStatus.PAID);
+        Show.SeatStatus seatStatus = calls.getSeatStatus(showId, seatNumber);
+        assertThat(seatStatus).isEqualTo(Show.SeatStatus.PAID);
       });
   }
 
@@ -94,14 +94,14 @@ class SeatReservationWorkflowTest {
       .atMost(10, TimeUnit.of(SECONDS))
       .ignoreExceptions()
       .untilAsserted(() -> {
-        CinemaDomainModel.SeatReservationStatus status = getReservationStatus(reservationId);
-        assertThat(status).isEqualTo(CinemaDomainModel.SeatReservationStatus.SEAT_RESERVATION_FAILED);
+        Show.SeatReservationStatus status = getReservationStatus(reservationId);
+        assertThat(status).isEqualTo(Show.SeatReservationStatus.SEAT_RESERVATION_FAILED);
 
         WalletApiModel.WalletResponse walletResponse = calls.getWallet(walletId);
         assertThat(walletResponse.balance()).isEqualTo(new BigDecimal(50));
 
-        CinemaDomainModel.SeatStatus seatStatus = calls.getSeatStatus(showId, seatNumber);
-        assertThat(seatStatus).isEqualTo(CinemaDomainModel.SeatStatus.AVAILABLE);
+        Show.SeatStatus seatStatus = calls.getSeatStatus(showId, seatNumber);
+        assertThat(seatStatus).isEqualTo(Show.SeatStatus.AVAILABLE);
       });
   }
 
@@ -131,14 +131,14 @@ class SeatReservationWorkflowTest {
       .ignoreExceptions()
       .pollInterval(Duration.ofSeconds(1))
       .untilAsserted(() -> {
-        CinemaDomainModel.SeatReservationStatus status = getReservationStatus(reservationId);
+        Show.SeatReservationStatus status = getReservationStatus(reservationId);
         assertThat(status).isEqualTo(SEAT_RESERVATION_REFUNDED);
 
         WalletApiModel.WalletResponse walletResponse = calls.getWallet(walletId);
         assertThat(walletResponse.balance()).isEqualTo(new BigDecimal(200));
 
-        CinemaDomainModel.SeatStatus seatStatus = calls.getSeatStatus(showId, seatNumber);
-        assertThat(seatStatus).isEqualTo(CinemaDomainModel.SeatStatus.AVAILABLE);
+        Show.SeatStatus seatStatus = calls.getSeatStatus(showId, seatNumber);
+        assertThat(seatStatus).isEqualTo(Show.SeatStatus.AVAILABLE);
       });
   }
 
@@ -150,10 +150,10 @@ class SeatReservationWorkflowTest {
       .block(timeout);
   }
 
-  private CinemaDomainModel.SeatReservationStatus getReservationStatus(String reservationId) {
+  private Show.SeatReservationStatus getReservationStatus(String reservationId) {
     return webClient.get().uri("/seat-reservation/" + reservationId)
       .retrieve()
-      .bodyToMono(CinemaDomainModel.SeatReservationStatus.class)
+      .bodyToMono(Show.SeatReservationStatus.class)
       .block(timeout);
   }
 

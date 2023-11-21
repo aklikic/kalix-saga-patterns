@@ -2,8 +2,8 @@ package com.example.cinema.choreography;
 
 import com.example.Main;
 import com.example.cinema.Calls;
-import com.example.cinema.CinemaDomainModel;
 import com.example.cinema.TestUtils;
+import com.example.cinema.model.CinemaApiModel;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +12,8 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.time.Duration;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
@@ -22,7 +23,7 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 @DirtiesContext
 @SpringBootTest(classes = Main.class)
 @ActiveProfiles("choreography")
-class ShowByReservationViewIntegrationTest extends KalixIntegrationTestKitSupport {
+class ShowsByAvailableSeatsViewIntegrationTest extends KalixIntegrationTestKitSupport {
 
   @Autowired
   private Calls calls;
@@ -30,13 +31,16 @@ class ShowByReservationViewIntegrationTest extends KalixIntegrationTestKitSuppor
   private Duration timeout = Duration.ofSeconds(10);
 
   @Test
-  public void shouldUpdateShowByReservationEntry() {
+  public void shouldUpdateShowByAvailableSeatsEntry() {
     //given
     var showId = TestUtils.randomId();
+    var showTitle = "title";
+    var showTitleSearch = showTitle;
+    var maxSeats = 100;
     var reservationId1 = TestUtils.randomId();
     var reservationId2 = TestUtils.randomId();
     var walletId = TestUtils.randomId();
-    calls.createShow(showId, "title");
+    calls.createShow(showId, showTitle, maxSeats);
     calls.createWallet(walletId, 500);
 
     //when
@@ -44,16 +48,16 @@ class ShowByReservationViewIntegrationTest extends KalixIntegrationTestKitSuppor
     calls.reserveSeat(showId, walletId, reservationId2, 4);
 
     //then
-    CinemaDomainModel.ShowByReservation expected = new CinemaDomainModel.ShowByReservation(showId, Set.of(reservationId1, reservationId2));
+    List<CinemaApiModel.ShowsByAvailableSeatsViewRecord> list = new ArrayList<>();
+    list.add(new CinemaApiModel.ShowsByAvailableSeatsViewRecord(showId,showTitle,maxSeats-2));
+    CinemaApiModel.ShowsByAvailableSeatsRecordList expected = new CinemaApiModel.ShowsByAvailableSeatsRecordList(list);
     await()
       .atMost(10, TimeUnit.of(SECONDS))
       .ignoreExceptions()
       .untilAsserted(() -> {
-        CinemaDomainModel.ShowByReservation result = calls.getShowByReservation(reservationId1).getBody();
-        assertThat(result).isEqualTo(expected);
+        CinemaApiModel.ShowsByAvailableSeatsRecordList result = calls.getShowsByAvailableSeats(1).getBody();
+        assertThat(expected).isEqualTo(result);
 
-        CinemaDomainModel.ShowByReservation result2 = calls.getShowByReservation(reservationId2).getBody();
-        assertThat(result2).isEqualTo(expected);
       });
   }
 

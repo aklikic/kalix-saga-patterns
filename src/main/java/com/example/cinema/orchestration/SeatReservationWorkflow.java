@@ -1,9 +1,8 @@
 package com.example.cinema.orchestration;
 
-import com.example.cinema.CinemaApiModel;
-import com.example.cinema.CinemaDomainModel;
+import com.example.cinema.model.CinemaApiModel;
 import com.example.cinema.ShowEntity;
-import com.example.wallet.WalletDomainModel;
+import com.example.cinema.model.Show;
 import com.example.wallet.WalletEntity;
 import com.google.protobuf.any.Any;
 import kalix.javasdk.DeferredCall;
@@ -24,17 +23,17 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.UUID;
 
-import static com.example.cinema.CinemaDomainModel.SeatReservationStatus.STARTED;
+import static com.example.cinema.model.Show.SeatReservationStatus.STARTED;
 import static io.grpc.Status.Code.INVALID_ARGUMENT;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static kalix.javasdk.workflow.Workflow.RecoverStrategy.maxRetries;
-import static com.example.wallet.WalletApiModel.WalletCommand.*;
+import static com.example.wallet.model.WalletApiModel.WalletCommand.*;
 
 @Profile("orchestration")
 @Id("id")
 @TypeId("seat-reservation")
 @RequestMapping("/seat-reservation/{id}")
-public class SeatReservationWorkflow extends Workflow<CinemaDomainModel.SeatReservation> {
+public class SeatReservationWorkflow extends Workflow<Show.SeatReservation> {
 
   public static final String RESERVE_SEAT_STEP = "reserve-seat";
   public static final String CHARGE_WALLET_STEP = "charge-wallet";
@@ -52,7 +51,7 @@ public class SeatReservationWorkflow extends Workflow<CinemaDomainModel.SeatRese
   }
 
   @Override
-  public WorkflowDef<CinemaDomainModel.SeatReservation> definition() {
+  public WorkflowDef<Show.SeatReservation> definition() {
     var reserveSeat = step(RESERVE_SEAT_STEP)
       .call(this::reserveSeat)
       .andThen(CinemaApiModel.Response.class, this::chargeWalletOrStop);
@@ -183,7 +182,7 @@ public class SeatReservationWorkflow extends Workflow<CinemaDomainModel.SeatRese
       return effects().error("seat reservation already exists", INVALID_ARGUMENT);
     } else {
       return effects()
-        .updateState(new CinemaDomainModel.SeatReservation(reservationId(), reserveSeat.showId, reserveSeat.seatNumber, reserveSeat.walletId, reserveSeat.price, STARTED))
+        .updateState(new Show.SeatReservation(reservationId(), reserveSeat.showId, reserveSeat.seatNumber, reserveSeat.walletId, reserveSeat.price, STARTED))
         .transitionTo(RESERVE_SEAT_STEP)
         .thenReply("reservation workflow started");
     }

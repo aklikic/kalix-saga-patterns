@@ -1,9 +1,8 @@
 package com.example.cinema;
 
-import com.example.cinema.CinemaApiModel;
-import com.example.cinema.CinemaDomainModel;
-import com.example.wallet.WalletApiModel;
-import com.example.wallet.WalletDomainModel;
+import com.example.cinema.model.CinemaApiModel;
+import com.example.cinema.model.Show;
+import com.example.wallet.model.WalletApiModel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,7 +16,7 @@ import java.time.Duration;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.HttpStatus.OK;
 
-import static com.example.wallet.WalletApiModel.WalletCommand.*;
+import static com.example.wallet.model.WalletApiModel.WalletCommand.*;
 
 @Component
 public class Calls {
@@ -28,7 +27,9 @@ public class Calls {
   private Duration timeout = Duration.ofSeconds(10);
 
   public void createShow(String showId, String title) {
-    int maxSeats = 100;
+     createShow(showId,title,100);
+  }
+  public void createShow(String showId, String title, int maxSeats) {
 
     var response = webClient.post().uri("/cinema-show/" + showId)
       .bodyValue(new CinemaApiModel.ShowCommand.CreateShow(title, maxSeats))
@@ -39,10 +40,10 @@ public class Calls {
     assertThat(response.getStatusCode()).isEqualTo(OK);
   }
 
-  public CinemaDomainModel.SeatStatus getSeatStatus(String showId, int seatNumber) {
+  public Show.SeatStatus getSeatStatus(String showId, int seatNumber) {
     return webClient.get().uri("/cinema-show/" + showId + "/seat-status/" + seatNumber)
       .retrieve()
-      .bodyToMono(CinemaDomainModel.SeatStatus.class)
+      .bodyToMono(Show.SeatStatus.class)
       .block(timeout);
   }
 
@@ -61,18 +62,18 @@ public class Calls {
       .block(timeout);
   }
 
-  public ResponseEntity<CinemaDomainModel.ShowByReservation> getShowByReservation(String reservationId) {
-    return webClient.get().uri("/show/by-reservation-id/" + reservationId)
-      .retrieve()
-      .toEntity(CinemaDomainModel.ShowByReservation.class)
-      .onErrorResume(WebClientResponseException.class, error -> {
-        if (error.getStatusCode().is4xxClientError()) {
-          return Mono.just(ResponseEntity.status(HttpStatus.NOT_FOUND).body(null));
-        } else {
-          return Mono.error(error);
-        }
-      })
-      .block();
+  public ResponseEntity<CinemaApiModel.ShowsByAvailableSeatsRecordList> getShowsByAvailableSeats(int requestedSeatCount) {
+    return webClient.get().uri("/show/by-available-seats/" + requestedSeatCount)
+            .retrieve()
+            .toEntity(CinemaApiModel.ShowsByAvailableSeatsRecordList.class)
+            .onErrorResume(WebClientResponseException.class, error -> {
+              if (error.getStatusCode().is4xxClientError()) {
+                return Mono.just(ResponseEntity.status(HttpStatus.NOT_FOUND).body(null));
+              } else {
+                return Mono.error(error);
+              }
+            })
+            .block();
   }
 
   public void createWallet(String walletId, int amount) {

@@ -2,6 +2,8 @@ package com.example.cinema.choreography;
 
 import com.example.cinema.*;
 import com.example.cinema.choreography.WalletFailureEntity.WalletChargeFailureOccurred;
+import com.example.cinema.model.CinemaApiModel;
+import com.example.cinema.model.Show;
 import kalix.javasdk.action.Action;
 import kalix.javasdk.annotations.Subscribe;
 import kalix.javasdk.client.ComponentClient;
@@ -42,6 +44,6 @@ public class HandleWalletFailuresAction extends Action {
 
   private CompletionStage<String> getShowIdBy(String reservationId) {
     return componentClient.forValueEntity(reservationId).call(ReservationEntity::get).execute()
-      .thenApply(CinemaDomainModel.Reservation::showId);
+      .thenApply(Show.Reservation::showId);
   }
 }

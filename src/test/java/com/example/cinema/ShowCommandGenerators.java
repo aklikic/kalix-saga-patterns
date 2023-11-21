@@ -5,7 +5,7 @@ import static com.example.cinema.DomainGenerators.randomReservationId;
 import static com.example.cinema.DomainGenerators.randomSeatNumber;
 import static com.example.cinema.DomainGenerators.randomTitle;
 import static com.example.cinema.DomainGenerators.randomWalletId;
-import static com.example.cinema.CinemaApiModel.ShowCommand.*;
+import static com.example.cinema.model.CinemaApiModel.ShowCommand.*;
 
 public class ShowCommandGenerators {
 

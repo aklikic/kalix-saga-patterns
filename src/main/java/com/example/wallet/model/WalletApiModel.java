@@ -1,4 +1,6 @@
-package com.example.wallet;
+package com.example.wallet.model;
+
+import com.example.wallet.model.Wallet;
 
 import java.math.BigDecimal;
 
@@ -27,7 +29,7 @@ public interface WalletApiModel {
     }
 
     record WalletResponse(String id, BigDecimal balance) {
-      public static WalletResponse from(WalletDomainModel.Wallet wallet) {
+      public static WalletResponse from(Wallet wallet) {
         return new WalletResponse(wallet.id(), wallet.balance());
       }
     }

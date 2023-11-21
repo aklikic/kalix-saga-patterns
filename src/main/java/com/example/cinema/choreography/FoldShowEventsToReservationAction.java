@@ -10,7 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Profile;
 
-import static com.example.cinema.CinemaDomainModel.ShowEvent.*;
+import static com.example.cinema.model.ShowEvent.*;
 
 @Profile("choreography")
 @Subscribe.EventSourcedEntity(value = ShowEntity.class, ignoreUnknown = true)

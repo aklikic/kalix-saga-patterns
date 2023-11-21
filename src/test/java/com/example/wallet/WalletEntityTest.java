@@ -1,6 +1,8 @@
 package com.example.wallet;
 
-import com.example.cinema.CinemaApiModel;
+import com.example.cinema.model.CinemaApiModel;
+import com.example.wallet.model.Wallet;
+import com.example.wallet.model.WalletEvent;
 import kalix.javasdk.testkit.EventSourcedResult;
 import kalix.javasdk.testkit.EventSourcedTestKit;
 import org.junit.jupiter.api.Test;
@@ -11,9 +13,8 @@ import static com.example.cinema.DomainGenerators.randomWalletId;
 import static com.example.wallet.DomainGenerators.randomCommandId;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import static com.example.wallet.WalletDomainModel.*;
-import static com.example.wallet.WalletDomainModel.WalletEvent.*;
-import static com.example.wallet.WalletApiModel.WalletCommand.*;
+import static com.example.wallet.model.WalletEvent.*;
+import static com.example.wallet.model.WalletApiModel.WalletCommand.*;
 
 class WalletEntityTest {
 

@@ -1,5 +1,7 @@
 package com.example.cinema;
 
+import com.example.cinema.model.Show;
+
 import java.math.BigDecimal;
 import java.util.Random;
 import java.util.UUID;
@@ -35,7 +37,7 @@ public class DomainGenerators {
     return random.nextInt(ShowBuilder.MAX_SEATS);
   }
 
-  public static CinemaDomainModel.Show randomShow() {
+  public static Show randomShow() {
     return showBuilder().withRandomSeats().build();
   }
 }

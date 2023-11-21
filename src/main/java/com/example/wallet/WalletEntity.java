@@ -1,6 +1,9 @@
 package com.example.wallet;
 
-import com.example.cinema.CinemaApiModel;
+import com.example.cinema.model.CinemaApiModel;
+import com.example.wallet.model.Wallet;
+import com.example.wallet.model.WalletApiModel;
+import com.example.wallet.model.WalletEvent;
 import kalix.javasdk.annotations.EventHandler;
 import kalix.javasdk.annotations.ForwardHeaders;
 import kalix.javasdk.annotations.Id;
@@ -18,15 +21,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import java.math.BigDecimal;
 import java.util.function.Function;
 
-import static com.example.wallet.WalletApiModel.WalletCommandError.EXPENSE_NOT_FOUND;
+import static com.example.wallet.model.WalletApiModel.WalletCommandError.EXPENSE_NOT_FOUND;
 import static io.grpc.Status.Code.INVALID_ARGUMENT;
 import static kalix.javasdk.StatusCode.ErrorCode.NOT_FOUND;
 
-import static com.example.wallet.WalletApiModel.WalletCommand.*;
-import static com.example.wallet.WalletDomainModel.WalletEvent.*;
-import static com.example.wallet.WalletDomainModel.*;
-import static com.example.wallet.WalletApiModel.*;
-import static com.example.cinema.CinemaApiModel.Response.*;
+import static com.example.wallet.model.WalletApiModel.WalletCommand.*;
+import static com.example.wallet.model.WalletEvent.*;
+import static com.example.wallet.model.WalletApiModel.*;
+import static com.example.cinema.model.CinemaApiModel.Response.*;
 
 @Id("id")
 @TypeId("wallet")

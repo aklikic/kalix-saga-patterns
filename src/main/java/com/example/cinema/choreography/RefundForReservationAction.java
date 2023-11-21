@@ -1,8 +1,8 @@
 package com.example.cinema.choreography;
 
-import com.example.cinema.CinemaApiModel;
-import com.example.cinema.CinemaDomainModel;
+import com.example.cinema.model.CinemaApiModel;
 import com.example.cinema.ShowEntity;
+import com.example.cinema.model.Show;
 import com.example.wallet.WalletEntity;
 import kalix.javasdk.action.Action;
 import kalix.javasdk.annotations.Subscribe;
@@ -16,8 +16,8 @@ import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static com.example.cinema.CinemaDomainModel.ShowEvent.*;
-import static com.example.wallet.WalletApiModel.WalletCommand.*;
+import static com.example.cinema.model.ShowEvent.*;
+import static com.example.wallet.model.WalletApiModel.WalletCommand.*;
 
 @Profile("choreography")
 @Subscribe.EventSourcedEntity(value = ShowEntity.class, ignoreUnknown = true)
@@ -44,7 +44,7 @@ public class RefundForReservationAction extends Action {
     );
   }
 
-  private CompletionStage<CinemaDomainModel.Reservation> getReservation(String reservationId) {
+  private CompletionStage<Show.Reservation> getReservation(String reservationId) {
     return componentClient.forValueEntity(reservationId)
       .call(ReservationEntity::get)
       .execute();

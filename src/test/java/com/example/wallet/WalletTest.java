@@ -1,14 +1,14 @@
 package com.example.wallet;
 
+import com.example.wallet.model.Wallet;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 
 import static com.example.wallet.DomainGenerators.randomCommandId;
-import static com.example.wallet.WalletApiModel.WalletCommandError.DUPLICATED_COMMAND;
-import static com.example.wallet.WalletApiModel.WalletCommandError.WALLET_ALREADY_EXISTS;
-import static com.example.wallet.WalletApiModel.WalletCommand.*;
-import static com.example.wallet.WalletDomainModel.*;
+import static com.example.wallet.model.WalletApiModel.WalletCommandError.DUPLICATED_COMMAND;
+import static com.example.wallet.model.WalletApiModel.WalletCommandError.WALLET_ALREADY_EXISTS;
+import static com.example.wallet.model.WalletApiModel.WalletCommand.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class WalletTest {

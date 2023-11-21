@@ -1,5 +1,8 @@
 package com.example.cinema;
 
+import com.example.cinema.model.CinemaApiModel;
+import com.example.cinema.model.Show;
+import com.example.cinema.model.ShowEvent;
 import io.vavr.Tuple2;
 import org.junit.jupiter.api.Test;
 
@@ -10,21 +13,21 @@ import static com.example.cinema.DomainGenerators.randomReservationId;
 import static com.example.cinema.DomainGenerators.randomShow;
 import static com.example.cinema.DomainGenerators.randomShowId;
 import static com.example.cinema.DomainGenerators.randomWalletId;
-import static com.example.cinema.CinemaDomainModel.SeatStatus.AVAILABLE;
-import static com.example.cinema.CinemaDomainModel.SeatStatus.PAID;
-import static com.example.cinema.CinemaDomainModel.SeatStatus.RESERVED;
+import static com.example.cinema.model.Show.SeatStatus.AVAILABLE;
+import static com.example.cinema.model.Show.SeatStatus.PAID;
+import static com.example.cinema.model.Show.SeatStatus.RESERVED;
 import static com.example.cinema.ShowBuilder.showBuilder;
-import static com.example.cinema.CinemaApiModel.ShowCommandError.CANCELLING_CONFIRMED_RESERVATION;
-import static com.example.cinema.CinemaApiModel.ShowCommandError.DUPLICATED_COMMAND;
-import static com.example.cinema.CinemaApiModel.ShowCommandError.RESERVATION_NOT_FOUND;
-import static com.example.cinema.CinemaApiModel.ShowCommandError.SEAT_NOT_AVAILABLE;
-import static com.example.cinema.CinemaApiModel.ShowCommandError.SEAT_NOT_FOUND;
-import static com.example.cinema.CinemaApiModel.ShowCommandError.SHOW_ALREADY_EXISTS;
+import static com.example.cinema.model.CinemaApiModel.ShowCommandError.CANCELLING_CONFIRMED_RESERVATION;
+import static com.example.cinema.model.CinemaApiModel.ShowCommandError.DUPLICATED_COMMAND;
+import static com.example.cinema.model.CinemaApiModel.ShowCommandError.RESERVATION_NOT_FOUND;
+import static com.example.cinema.model.CinemaApiModel.ShowCommandError.SEAT_NOT_AVAILABLE;
+import static com.example.cinema.model.CinemaApiModel.ShowCommandError.SEAT_NOT_FOUND;
+import static com.example.cinema.model.CinemaApiModel.ShowCommandError.SHOW_ALREADY_EXISTS;
 import static com.example.cinema.ShowCommandGenerators.randomCreateShow;
 import static com.example.cinema.ShowCommandGenerators.randomReserveSeat;
 import static org.assertj.core.api.Assertions.assertThat;
-import static com.example.cinema.CinemaApiModel.ShowCommand.*;
-import static com.example.cinema.CinemaDomainModel.ShowEvent.*;
+import static com.example.cinema.model.CinemaApiModel.ShowCommand.*;
+import static com.example.cinema.model.ShowEvent.*;
 
 class ShowTest {
 
@@ -35,8 +38,8 @@ class ShowTest {
     var createShow = randomCreateShow();
 
     //when
-    var showCreated = CinemaDomainModel.ShowCreator.create(showId, createShow).get();
-    var show = CinemaDomainModel.Show.create(showCreated);
+    var showCreated = Show.ShowCreator.create(showId, createShow).get();
+    var show = Show.create(showCreated);
 
     //then
     assertThat(show.id()).isEqualTo(showId);
@@ -68,7 +71,7 @@ class ShowTest {
     var event = show.process(reserveSeat).get();
 
     //then
-    assertThat(event).isEqualTo(new SeatReserved(show.id(), reserveSeat.walletId(), reserveSeat.reservationId(), reserveSeat.seatNumber(), seatToReserve.price()));
+    assertThat(event).isEqualTo(new SeatReserved(show.id(), reserveSeat.walletId(), reserveSeat.reservationId(), reserveSeat.seatNumber(), seatToReserve.price(),show.seats().size()-1));
   }
 
   @Test
@@ -145,7 +148,7 @@ class ShowTest {
   @Test
   public void shouldCancelSeatReservation() {
     //given
-    var reservedSeat = new CinemaDomainModel.Seat(2, CinemaDomainModel.SeatStatus.RESERVED, new BigDecimal("123"));
+    var reservedSeat = new Show.Seat(2, Show.SeatStatus.RESERVED, new BigDecimal("123"));
     var reservationId = randomReservationId();
     var show = showBuilder().withRandomSeats().withSeatReservation(reservedSeat, reservationId).build();
     var cancelSeatReservation = new CancelSeatReservation(reservationId);
@@ -155,7 +158,7 @@ class ShowTest {
     var updatedShow = show.apply(event);
 
     //then
-    assertThat(event).isEqualTo(new SeatReservationCancelled(show.id(), reservationId, reservedSeat.number()));
+    assertThat(event).isEqualTo(new SeatReservationCancelled(show.id(), reservationId, reservedSeat.number(),show.seats().size()+1));
     assertThat(updatedShow.getSeat(reservedSeat.number()).get().status()).isEqualTo(AVAILABLE);
     assertThat(updatedShow.pendingReservations().get(reservationId).isEmpty()).isTrue();
   }
@@ -163,7 +166,7 @@ class ShowTest {
   @Test
   public void shouldRejectCancellationDuplicate() {
     //given
-    var reservedSeat = new CinemaDomainModel.Seat(2, CinemaDomainModel.SeatStatus.RESERVED, new BigDecimal("123"));
+    var reservedSeat = new Show.Seat(2, Show.SeatStatus.RESERVED, new BigDecimal("123"));
     var reservationId = randomReservationId();
     var show = showBuilder().withRandomSeats().withSeatReservation(reservedSeat, reservationId).build();
     var cancelSeatReservation = new CancelSeatReservation(reservationId);
@@ -185,7 +188,7 @@ class ShowTest {
   @Test
   public void shouldConfirmAfterCancellation() {
     //given
-    var reservedSeat = new CinemaDomainModel.Seat(2, CinemaDomainModel.SeatStatus.RESERVED, new BigDecimal("123"));
+    var reservedSeat = new Show.Seat(2, Show.SeatStatus.RESERVED, new BigDecimal("123"));
     var reservationId = randomReservationId();
     var show = showBuilder().withRandomSeats().withSeatReservation(reservedSeat, reservationId).build();
     var cancelSeatReservation = new CancelSeatReservation(reservationId);
@@ -203,7 +206,7 @@ class ShowTest {
   @Test
   public void shouldConfirmSeatReservation() {
     //given
-    var reservedSeat = new CinemaDomainModel.Seat(2, CinemaDomainModel.SeatStatus.RESERVED, new BigDecimal("123"));
+    var reservedSeat = new Show.Seat(2, Show.SeatStatus.RESERVED, new BigDecimal("123"));
     var reservationId = randomReservationId();
     var show = showBuilder().withRandomSeats().withSeatReservation(reservedSeat, reservationId).build();
     var confirmReservationPayment = new ConfirmReservationPayment(reservationId);
@@ -221,7 +224,7 @@ class ShowTest {
   @Test
   public void shouldRejectConfirmationDuplicate() {
     //given
-    var reservedSeat = new CinemaDomainModel.Seat(2, CinemaDomainModel.SeatStatus.RESERVED, new BigDecimal("123"));
+    var reservedSeat = new Show.Seat(2, Show.SeatStatus.RESERVED, new BigDecimal("123"));
     var reservationId = randomReservationId();
     var show = showBuilder().withRandomSeats().withSeatReservation(reservedSeat, reservationId).build();
     var confirmReservationPayment = new ConfirmReservationPayment(reservationId);
@@ -243,7 +246,7 @@ class ShowTest {
   @Test
   public void shouldRejectCancellationAfterConfirmation() {
     //given
-    var reservedSeat = new CinemaDomainModel.Seat(2, CinemaDomainModel.SeatStatus.RESERVED, new BigDecimal("123"));
+    var reservedSeat = new Show.Seat(2, Show.SeatStatus.RESERVED, new BigDecimal("123"));
     var reservationId = randomReservationId();
     var show = showBuilder().withRandomSeats().withSeatReservation(reservedSeat, reservationId).build();
     var confirmReservationPayment = new ConfirmReservationPayment(reservationId);
@@ -271,7 +274,7 @@ class ShowTest {
     assertThat(result).isEqualTo(RESERVATION_NOT_FOUND);
   }
 
-  private CinemaDomainModel.Show apply(CinemaDomainModel.Show show, List<CinemaDomainModel.ShowEvent> events) {
-    return io.vavr.collection.List.ofAll(events).foldLeft(show, CinemaDomainModel.Show::apply);
+  private Show apply(Show show, List<ShowEvent> events) {
+    return io.vavr.collection.List.ofAll(events).foldLeft(show, Show::apply);
   }
 }

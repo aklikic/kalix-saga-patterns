@@ -1,4 +1,4 @@
-package com.example.cinema;
+package com.example.cinema.model;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -32,10 +32,17 @@ public interface CinemaApiModel {
       CANCELLING_CONFIRMED_RESERVATION
     }
 
+    record ShowsByAvailableSeatsViewRecord(String showId, String title, int availableSeats){
+        public ShowsByAvailableSeatsViewRecord updateAvailableSeats(int availableSeats){
+            return new ShowsByAvailableSeatsViewRecord(showId(),title(),availableSeats);
+        }
+    }
+
     @JsonTypeInfo(use = JsonTypeInfo.Id.NAME)
     @JsonSubTypes({
       @JsonSubTypes.Type(value = Response.Success.class),
-      @JsonSubTypes.Type(value = Response.Failure.class)})
+      @JsonSubTypes.Type(value = Response.Failure.class)
+    })
     sealed interface Response {
 
       record Success(String message) implements Response {
@@ -51,10 +58,12 @@ public interface CinemaApiModel {
       }
     }
 
-    record ShowResponse(String id, String title, List<CinemaDomainModel.Seat> seats) {
+    record ShowResponse(String id, String title, List<Show.Seat> seats) {
 
-      public static ShowResponse from(CinemaDomainModel.Show show) {
+      public static ShowResponse from(Show show) {
         return new ShowResponse(show.id(), show.title(), show.seats().values().asJava());
       }
     }
+
+    record ShowsByAvailableSeatsRecordList(List<ShowsByAvailableSeatsViewRecord> list){}
 }
