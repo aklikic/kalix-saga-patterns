@@ -17,7 +17,7 @@ import static com.example.cinema.model.ShowEvent.*;
 @Subscribe.EventSourcedEntity(value = ShowEntity.class, ignoreUnknown = true)
 public class ShowsByAvailableSeatsView extends View<ShowsByAvailableSeatsViewRecord> {
 
-  @GetMapping("/show/by-available-seats/{requestedSeatCount}")
+  @GetMapping("/cinema-shows/by-available-seats/{requestedSeatCount}")
   @Query("SELECT * as list FROM show_by_available_seats WHERE availableSeats >= :requestedSeatCount")
   public ShowsByAvailableSeatsRecordList getShows(@PathVariable Integer requestedSeatCount) {
     return null;

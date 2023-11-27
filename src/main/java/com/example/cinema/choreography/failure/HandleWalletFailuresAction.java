@@ -1,7 +1,8 @@
-package com.example.cinema.choreography;
+package com.example.cinema.choreography.failure;
 
 import com.example.cinema.*;
-import com.example.cinema.choreography.WalletFailureEntity.WalletChargeFailureOccurred;
+import com.example.cinema.choreography.reservation.ReservationEntity;
+import com.example.cinema.choreography.failure.WalletFailureEntity.WalletChargeFailureOccurred;
 import com.example.cinema.model.CinemaApiModel;
 import com.example.cinema.model.Show;
 import kalix.javasdk.action.Action;

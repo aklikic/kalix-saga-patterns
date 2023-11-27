@@ -3,6 +3,7 @@ package com.example.cinema.choreography;
 import akka.actor.ActorSystem;
 import akka.pattern.Patterns;
 import com.example.cinema.ShowEntity;
+import com.example.cinema.choreography.failure.WalletFailureEntity;
 import com.example.wallet.WalletEntity;
 import kalix.javasdk.action.Action;
 import kalix.javasdk.annotations.Subscribe;

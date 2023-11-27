@@ -1,4 +1,4 @@
-package com.example.cinema.choreography;
+package com.example.cinema.choreography.failure;
 
 import kalix.javasdk.annotations.EventHandler;
 import kalix.javasdk.annotations.Id;
@@ -6,6 +6,7 @@ import kalix.javasdk.annotations.TypeId;
 import kalix.javasdk.eventsourcedentity.EventSourcedEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Profile;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import static com.example.wallet.model.WalletApiModel.WalletCommand.*;
 
+@Profile("choreography")
 @Id("id")
 @TypeId("wallet-failure")
 @RequestMapping("/wallet-failure/{id}")

@@ -1,5 +1,6 @@
 package com.example.cinema.choreography;
 
+import com.example.cinema.choreography.reservation.ReservationEntity;
 import com.example.cinema.model.CinemaApiModel;
 import com.example.cinema.ShowEntity;
 import com.example.cinema.model.Show;
@@ -38,9 +39,10 @@ public class RefundForReservationAction extends Action {
     String commandId = UUID.nameUUIDFromBytes(sequenceNum.getBytes(UTF_8)).toString();
 
     return effects().asyncReply(
-      getReservation(cancelledReservationConfirmed.reservationId()).thenCompose(reservation ->
-        refund(reservation.walletId(), reservation.price(), commandId)
-      )
+      getReservation(cancelledReservationConfirmed.reservationId())
+              .thenCompose(reservation ->
+                refund(reservation.walletId(), reservation.price(), commandId)
+              )
     );
   }
 
