@@ -32,12 +32,6 @@ public interface CinemaApiModel {
       CANCELLING_CONFIRMED_RESERVATION
     }
 
-    record ShowsByAvailableSeatsViewRecord(String showId, String title, int availableSeats){
-        public ShowsByAvailableSeatsViewRecord updateAvailableSeats(int availableSeats){
-            return new ShowsByAvailableSeatsViewRecord(showId(),title(),availableSeats);
-        }
-    }
-
     @JsonTypeInfo(use = JsonTypeInfo.Id.NAME)
     @JsonSubTypes({
       @JsonSubTypes.Type(value = Response.Success.class),
@@ -65,5 +59,10 @@ public interface CinemaApiModel {
       }
     }
 
+    record ShowsByAvailableSeatsViewRecord(String showId, String title, int availableSeats){
+        public ShowsByAvailableSeatsViewRecord updateAvailableSeats(int availableSeats){
+            return new ShowsByAvailableSeatsViewRecord(showId(),title(),availableSeats);
+        }
+    }
     record ShowsByAvailableSeatsRecordList(List<ShowsByAvailableSeatsViewRecord> list){}
 }

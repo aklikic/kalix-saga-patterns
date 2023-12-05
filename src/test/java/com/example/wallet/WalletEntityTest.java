@@ -40,17 +40,18 @@ class WalletEntityTest {
   public void shouldChargeWallet() {
     //given
     var walletId = randomWalletId();
+    var expenseId = "r1";
     var initialAmount = 100;
     EventSourcedTestKit<Wallet, WalletEvent, WalletEntity> testKit = EventSourcedTestKit.of(WalletEntity::new);
     testKit.call(wallet -> wallet.create(walletId, initialAmount));
-    var chargeWallet = new ChargeWallet(new BigDecimal(10), "r1", randomCommandId());
+    var chargeWallet = new ChargeWallet(new BigDecimal(10),  randomCommandId());
 
     //when
-    EventSourcedResult<CinemaApiModel.Response> result = testKit.call(wallet -> wallet.charge(chargeWallet));
+    EventSourcedResult<CinemaApiModel.Response> result = testKit.call(wallet -> wallet.charge(expenseId, chargeWallet));
 
     //then
     assertThat(result.isReply()).isTrue();
-    assertThat(result.getNextEventOfType(WalletCharged.class)).isEqualTo(new WalletCharged(walletId, chargeWallet.amount(), chargeWallet.expenseId(), chargeWallet.commandId()));
+    assertThat(result.getNextEventOfType(WalletCharged.class)).isEqualTo(new WalletCharged(walletId, chargeWallet.amount(), expenseId, chargeWallet.commandId()));
     assertThat(testKit.getState().balance()).isEqualTo(new BigDecimal(90));
   }
 
@@ -58,14 +59,15 @@ class WalletEntityTest {
   public void shouldIgnoreChargeDuplicate() {
     //given
     var walletId = randomWalletId();
+    var expenseId = "r1";
     var initialAmount = 100;
     EventSourcedTestKit<Wallet, WalletEvent, WalletEntity> testKit = EventSourcedTestKit.of(WalletEntity::new);
     testKit.call(wallet -> wallet.create(walletId, initialAmount));
-    var chargeWallet = new ChargeWallet(new BigDecimal(10), "r1", randomCommandId());
-    testKit.call(wallet -> wallet.charge(chargeWallet));
+    var chargeWallet = new ChargeWallet(new BigDecimal(10), randomCommandId());
+    testKit.call(wallet -> wallet.charge(expenseId, chargeWallet));
 
     //when
-    EventSourcedResult<CinemaApiModel.Response> result = testKit.call(wallet -> wallet.charge(chargeWallet));
+    EventSourcedResult<CinemaApiModel.Response> result = testKit.call(wallet -> wallet.charge(expenseId, chargeWallet));
 
     //then
     assertThat(result.isReply()).isTrue();
@@ -77,14 +79,15 @@ class WalletEntityTest {
   public void shouldRefundWallet() {
     //given
     var walletId = randomWalletId();
+    var expenseId = "r1";
     var initialAmount = 100;
     EventSourcedTestKit<Wallet, WalletEvent, WalletEntity> testKit = EventSourcedTestKit.of(WalletEntity::new);
     testKit.call(wallet -> wallet.create(walletId, initialAmount));
-    var chargeWallet = new ChargeWallet(new BigDecimal(10), "r1", randomCommandId());
-    testKit.call(wallet -> wallet.charge(chargeWallet));
+    var chargeWallet = new ChargeWallet(new BigDecimal(10), randomCommandId());
+    testKit.call(wallet -> wallet.charge(expenseId, chargeWallet));
 
     //when
-    EventSourcedResult<CinemaApiModel.Response> result = testKit.call(wallet -> wallet.charge(chargeWallet));
+    EventSourcedResult<CinemaApiModel.Response> result = testKit.call(wallet -> wallet.charge(expenseId, chargeWallet));
 
     //then
     assertThat(result.isReply()).isTrue();

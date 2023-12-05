@@ -2,7 +2,6 @@ package com.example.cinema;
 
 import com.example.cinema.model.CinemaApiModel;
 import com.example.cinema.model.Show;
-import com.example.wallet.model.WalletApiModel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,7 +15,6 @@ import java.time.Duration;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.HttpStatus.OK;
 
-import static com.example.wallet.model.WalletApiModel.WalletCommand.*;
 
 @Component
 public class Calls {
@@ -63,7 +61,7 @@ public class Calls {
   }
 
   public ResponseEntity<CinemaApiModel.ShowsByAvailableSeatsRecordList> getShowsByAvailableSeats(int requestedSeatCount) {
-    return webClient.get().uri("/show/by-available-seats/" + requestedSeatCount)
+    return webClient.get().uri("/cinema-shows/by-available-seats/" + requestedSeatCount)
             .retrieve()
             .toEntity(CinemaApiModel.ShowsByAvailableSeatsRecordList.class)
             .onErrorResume(WebClientResponseException.class, error -> {
@@ -74,33 +72,6 @@ public class Calls {
               }
             })
             .block();
-  }
-
-  public void createWallet(String walletId, int amount) {
-    ResponseEntity<Void> response = webClient.post().uri("/wallet/" + walletId + "/create/" + amount)
-      .retrieve()
-      .toBodilessEntity()
-      .block(timeout);
-
-    assertThat(response.getStatusCode()).isEqualTo(OK);
-  }
-
-  public WalletApiModel.WalletResponse getWallet(String walletId) {
-    return webClient.get().uri("/wallet/" + walletId)
-      .retrieve()
-      .bodyToMono(WalletApiModel.WalletResponse.class)
-      .block(timeout);
-  }
-
-  public void chargeWallet(String walletId,ChargeWallet chargeWallet) {
-    ResponseEntity<Void> response = webClient.patch().uri("/wallet/" + walletId + "/charge")
-      .bodyValue(chargeWallet)
-      .header("skip-failure-simulation", "true")
-      .retrieve()
-      .toBodilessEntity()
-      .block(timeout);
-
-    assertThat(response.getStatusCode()).isEqualTo(OK);
   }
 
 }

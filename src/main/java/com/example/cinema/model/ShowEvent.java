@@ -24,8 +24,4 @@ sealed public interface ShowEvent {
     record SeatReservationCancelled(String showId, String reservationId, int seatNumber,
                                     int availableSeatsCount) implements ShowEvent {
     }
-
-    @TypeName("cancelled-reservation-confirmed")
-    record CancelledReservationConfirmed(String showId, String reservationId, int seatNumber) implements ShowEvent {
-    }
 }

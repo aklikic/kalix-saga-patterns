@@ -1,4 +1,4 @@
-package com.example.cinema.orchestration;
+package com.example.cinema;
 
 import com.example.cinema.model.CinemaApiModel;
 import com.example.cinema.ShowEntity;
@@ -87,7 +87,7 @@ public class SeatReservationWorkflow extends Workflow<Show.SeatReservation> {
     var commandId = UUID.nameUUIDFromBytes(currentState().reservationId().getBytes(UTF_8)).toString();
     return componentClient.forEventSourcedEntity(currentState().walletId())
       .call(WalletEntity::refund)
-      .params(new Refund(currentState().reservationId(), commandId));
+      .params(currentState().reservationId(),new Refund(commandId));
   }
 
   private TransitionalEffect<Void> cancelReservation(CinemaApiModel.Response response) {
@@ -137,7 +137,7 @@ public class SeatReservationWorkflow extends Workflow<Show.SeatReservation> {
     var commandId = expenseId; //reusing the same id, since we know that it will be unique
     return componentClient.forEventSourcedEntity(currentState().walletId())
       .call(WalletEntity::charge)
-      .params(new ChargeWallet(currentState().price(), expenseId, commandId));
+      .params(expenseId, new ChargeWallet(currentState().price(), commandId));
   }
 
   private TransitionalEffect<Void> confirmOrCancelReservation(CinemaApiModel.Response response) {

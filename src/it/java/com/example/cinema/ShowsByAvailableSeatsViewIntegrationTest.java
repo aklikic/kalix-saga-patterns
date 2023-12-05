@@ -1,4 +1,4 @@
-package com.example.cinema.choreography;
+package com.example.cinema;
 
 import com.example.Main;
 import com.example.cinema.Calls;
@@ -22,7 +22,6 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 
 @DirtiesContext
 @SpringBootTest(classes = Main.class)
-@ActiveProfiles("choreography")
 class ShowsByAvailableSeatsViewIntegrationTest extends KalixIntegrationTestKitSupport {
 
   @Autowired
@@ -41,7 +40,6 @@ class ShowsByAvailableSeatsViewIntegrationTest extends KalixIntegrationTestKitSu
     var reservationId2 = TestUtils.randomId();
     var walletId = TestUtils.randomId();
     calls.createShow(showId, showTitle, maxSeats);
-    calls.createWallet(walletId, 500);
 
     //when
     calls.reserveSeat(showId, walletId, reservationId1, 3);

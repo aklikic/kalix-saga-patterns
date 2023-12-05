@@ -23,19 +23,19 @@ public record Wallet(String id, BigDecimal balance, Map<String, Expense> expense
     public static final String EMPTY_WALLET_ID = "";
     public static Wallet EMPTY_WALLET = new Wallet(EMPTY_WALLET_ID, BigDecimal.ZERO, HashMap.empty(), HashSet.empty());
 
-    public Either<WalletApiModel.WalletCommandError, WalletEvent> process(WalletApiModel.WalletCommand command) {
-        if (isDuplicate(command)) {
-            return Either.left(DUPLICATED_COMMAND);
-        } else {
-            return switch (command) {
-                case WalletApiModel.WalletCommand.CreateWallet create -> handleCreate(create);
-                case WalletApiModel.WalletCommand.ChargeWallet charge -> ifExists(() -> handleCharge(charge));
-                case WalletApiModel.WalletCommand.Refund refund -> ifExists(() -> handleRefund(refund));
-                case WalletApiModel.WalletCommand.DepositFunds depositFunds ->
-                        ifExists(() -> handleDeposit(depositFunds));
-            };
-        }
-    }
+//    public Either<WalletApiModel.WalletCommandError, WalletEvent> process(String expenseId, WalletApiModel.WalletCommand command) {
+//        if (isDuplicate(command)) {
+//            return Either.left(DUPLICATED_COMMAND);
+//        } else {
+//            return switch (command) {
+//                case WalletApiModel.WalletCommand.CreateWallet create -> handleCreate(create);
+//                case WalletApiModel.WalletCommand.ChargeWallet charge -> ifExists(() -> handleCharge(expenseId,charge));
+//                case WalletApiModel.WalletCommand.Refund refund -> ifExists(() -> handleRefund(expenseId,refund));
+//                case WalletApiModel.WalletCommand.DepositFunds depositFunds ->
+//                        ifExists(() -> handleDeposit(depositFunds));
+//            };
+//        }
+//    }
 
     private boolean isDuplicate(WalletApiModel.WalletCommand command) {
         if (command instanceof WalletApiModel.WalletCommand.RequiresDeduplicationCommand c) {
@@ -53,32 +53,32 @@ public record Wallet(String id, BigDecimal balance, Map<String, Expense> expense
         }
     }
 
-    private Either<WalletApiModel.WalletCommandError, WalletEvent> handleCreate(WalletApiModel.WalletCommand.CreateWallet createWallet) {
-        if (isEmpty()) {
-            return right(new WalletEvent.WalletCreated(createWallet.walletId(), createWallet.initialAmount()));
+    public Either<WalletApiModel.WalletCommandError, WalletEvent> handleCreate(WalletApiModel.WalletCommand.CreateWallet createWallet) {
+        if (isDuplicate(createWallet)) {
+            return Either.left(DUPLICATED_COMMAND);
         } else {
-            return left(WALLET_ALREADY_EXISTS);
+            if (isEmpty()) {
+                return right(new WalletEvent.WalletCreated(createWallet.walletId(), createWallet.initialAmount()));
+            } else {
+                return left(WALLET_ALREADY_EXISTS);
+            }
         }
     }
 
-    private Either<WalletApiModel.WalletCommandError, WalletEvent> handleDeposit(WalletApiModel.WalletCommand.DepositFunds depositFunds) {
-        if (depositFunds.amount().compareTo(BigDecimal.ZERO) <= 0) {
-            return left(DEPOSIT_LE_ZERO);
+    public Either<WalletApiModel.WalletCommandError, WalletEvent> handleCharge(String expenseId, WalletApiModel.WalletCommand.ChargeWallet charge) {
+        if (isDuplicate(charge)) {
+            return Either.left(DUPLICATED_COMMAND);
         } else {
-            return right(new WalletEvent.FundsDeposited(id, depositFunds.amount(), depositFunds.commandId()));
+            if (balance.compareTo(charge.amount()) < 0) {
+                return right(new WalletEvent.WalletChargeRejected(id, expenseId, charge.commandId()));
+            } else {
+                return right(new WalletEvent.WalletCharged(id, charge.amount(), expenseId, charge.commandId()));
+            }
         }
     }
 
-    private Either<WalletApiModel.WalletCommandError, WalletEvent> handleCharge(WalletApiModel.WalletCommand.ChargeWallet charge) {
-        if (balance.compareTo(charge.amount()) < 0) {
-            return right(new WalletEvent.WalletChargeRejected(id, charge.expenseId(), charge.commandId()));
-        } else {
-            return right(new WalletEvent.WalletCharged(id, charge.amount(), charge.expenseId(), charge.commandId()));
-        }
-    }
-
-    private Either<WalletApiModel.WalletCommandError, WalletEvent> handleRefund(WalletApiModel.WalletCommand.Refund refund) {
-        return expenses.get(refund.expenseId()).fold(
+    public Either<WalletApiModel.WalletCommandError, WalletEvent> handleRefund(String expenseId, WalletApiModel.WalletCommand.Refund refund) {
+        return expenses.get(expenseId).fold(
                 () -> left(EXPENSE_NOT_FOUND),
                 expense -> right(new WalletEvent.WalletRefunded(id, expense.amount(), expense.expenseId(), refund.commandId()))
         );
@@ -94,8 +94,8 @@ public record Wallet(String id, BigDecimal balance, Map<String, Expense> expense
             }
             case WalletEvent.WalletRefunded refunded ->
                     new Wallet(id, balance.add(refunded.amount()), expenses.remove(refunded.expenseId()), commandIds.add(refunded.commandId()));
-            case WalletEvent.FundsDeposited deposited ->
-                    new Wallet(id, balance.add(deposited.amount()), expenses, commandIds.add(deposited.commandId()));
+//            case WalletEvent.FundsDeposited deposited ->
+//                    new Wallet(id, balance.add(deposited.amount()), expenses, commandIds.add(deposited.commandId()));
             case WalletEvent.WalletChargeRejected __ -> this;
         };
     }

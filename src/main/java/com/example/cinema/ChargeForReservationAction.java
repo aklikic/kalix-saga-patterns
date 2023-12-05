@@ -1,9 +1,7 @@
-package com.example.cinema.choreography;
+package com.example.cinema;
 
 import akka.actor.ActorSystem;
 import akka.pattern.Patterns;
-import com.example.cinema.ShowEntity;
-import com.example.cinema.choreography.failure.WalletFailureEntity;
 import com.example.wallet.WalletEntity;
 import kalix.javasdk.action.Action;
 import kalix.javasdk.annotations.Subscribe;
@@ -41,40 +39,35 @@ public class ChargeForReservationAction extends Action {
 
     String sequenceNum = contextForComponents().metadata().get("ce-sequence").orElseThrow();
     String walletId = seatReserved.walletId();
+
     String commandId = UUID.nameUUIDFromBytes(sequenceNum.getBytes(UTF_8)).toString();
-    var chargeWallet = new ChargeWallet(seatReserved.price(), expenseId, commandId);
+    var chargeWallet = new ChargeWallet(seatReserved.price(),commandId);
 
     var attempts = 3;
     var retryDelay = Duration.ofSeconds(1);
     ActorSystem actorSystem = actionContext().materializer().system();
 
     return effects().asyncReply(
-      Patterns.retry(() -> chargeWallet(walletId, chargeWallet),
+      Patterns.retry(() -> chargeWallet(walletId, expenseId, chargeWallet),
           attempts,
           retryDelay,
           actorSystem)
         .exceptionallyComposeAsync(throwable ->
-          registerFailure(throwable, walletId, chargeWallet)
+            registerFailure(seatReserved.showId(), expenseId, throwable)
         )
     );
   }
 
-  private CompletionStage<String> chargeWallet(String walletId, ChargeWallet chargeWallet) {
+  private CompletionStage<String> chargeWallet(String walletId, String expenseId, ChargeWallet chargeWallet) {
     return componentClient.forEventSourcedEntity(walletId)
       .call(WalletEntity::charge)
-      .params(chargeWallet)
+      .params(expenseId, chargeWallet)
       .execute()
       .thenApply(response -> "done");
   }
-
-
-  private CompletionStage<String> registerFailure(Throwable throwable, String walletId, ChargeWallet chargeWallet) {
+  private CompletionStage<String> registerFailure(String showId, String reservationId, Throwable throwable) {
     var msg = getMessage(throwable);
-
-    return componentClient.forEventSourcedEntity(walletId)
-      .call(WalletFailureEntity::registerChargeError)
-      .params(chargeWallet, msg)
-      .execute();
+    return componentClient.forEventSourcedEntity(showId).call(ShowEntity::cancelReservation).params(reservationId).execute().thenApply(res -> msg);
   }
 
   private String getMessage(Throwable throwable) {

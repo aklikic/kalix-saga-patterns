@@ -13,8 +13,6 @@ import java.util.List;
 import java.util.stream.IntStream;
 
 import static com.example.cinema.model.CinemaApiModel.ShowCommandError.*;
-import static com.example.cinema.model.Show.ReservationStatus.CANCELLED;
-import static com.example.cinema.model.Show.ReservationStatus.CONFIRMED;
 import static com.example.cinema.model.Show.SeatStatus.AVAILABLE;
 import static io.vavr.control.Either.left;
 import static io.vavr.control.Either.right;
@@ -40,7 +38,7 @@ public record Show(String id, String title, Map<Integer, Seat> seats,
         };
     }
 
-    private Either<CinemaApiModel.ShowCommandError, ShowEvent> handleReservation(CinemaApiModel.ShowCommand.ReserveSeat reserveSeat) {
+    public Either<CinemaApiModel.ShowCommandError, ShowEvent> handleReservation(CinemaApiModel.ShowCommand.ReserveSeat reserveSeat) {
         int seatNumber = reserveSeat.seatNumber();
         if (isDuplicate(reserveSeat.reservationId())) {
             return left(DUPLICATED_COMMAND);
@@ -55,15 +53,10 @@ public record Show(String id, String title, Map<Integer, Seat> seats,
         }
     }
 
-    private Either<CinemaApiModel.ShowCommandError, ShowEvent> handleCancellation(CinemaApiModel.ShowCommand.CancelSeatReservation cancelSeatReservation) {
+    public Either<CinemaApiModel.ShowCommandError, ShowEvent> handleCancellation(CinemaApiModel.ShowCommand.CancelSeatReservation cancelSeatReservation) {
         String reservationId = cancelSeatReservation.reservationId();
         return pendingReservations.get(reservationId).fold(
-                /*no reservation*/
-                () -> finishedReservations.get(reservationId).<Either<CinemaApiModel.ShowCommandError, ShowEvent>>map(finishedReservation ->
-                        switch (finishedReservation.status()) {
-                            case CANCELLED -> left(DUPLICATED_COMMAND);
-                            case CONFIRMED -> left(CANCELLING_CONFIRMED_RESERVATION);
-                        }).getOrElse(left(RESERVATION_NOT_FOUND)),
+                () ->left(RESERVATION_NOT_FOUND),
                 /*matching reservation*/
                 seatNumber -> seats.get(seatNumber).<Either<CinemaApiModel.ShowCommandError, ShowEvent>>map(seat ->
                         right(new ShowEvent.SeatReservationCancelled(id, reservationId, seatNumber, availableSeats()+1))
@@ -71,15 +64,10 @@ public record Show(String id, String title, Map<Integer, Seat> seats,
         );
     }
 
-    private Either<CinemaApiModel.ShowCommandError, ShowEvent> handleConfirmation(CinemaApiModel.ShowCommand.ConfirmReservationPayment confirmReservationPayment) {
+    public Either<CinemaApiModel.ShowCommandError, ShowEvent> handleConfirmation(CinemaApiModel.ShowCommand.ConfirmReservationPayment confirmReservationPayment) {
         String reservationId = confirmReservationPayment.reservationId();
         return pendingReservations.get(reservationId).fold(
-                () -> finishedReservations.get(reservationId).<Either<CinemaApiModel.ShowCommandError, ShowEvent>>map(finishedReservation ->
-                        switch (finishedReservation.status()) {
-                            case CONFIRMED -> left(DUPLICATED_COMMAND);
-                            case CANCELLED ->
-                                    right(new ShowEvent.CancelledReservationConfirmed(id, reservationId, finishedReservation.seatNumber()));
-                        }).getOrElse(left(RESERVATION_NOT_FOUND)),
+                () -> left(RESERVATION_NOT_FOUND),
                 seatNumber ->
                         seats.get(seatNumber).<Either<CinemaApiModel.ShowCommandError, ShowEvent>>map(seat ->
                                 right(new ShowEvent.SeatReservationPaid(id, reservationId, seatNumber))
@@ -101,31 +89,31 @@ public record Show(String id, String title, Map<Integer, Seat> seats,
                     applyReservationPaid(seatReservationPaid);
             case ShowEvent.SeatReservationCancelled seatReservationCancelled ->
                     applyReservationCancelled(seatReservationCancelled);
-            case ShowEvent.CancelledReservationConfirmed __ -> this;
+//            case ShowEvent.CancelledReservationConfirmed __ -> this;
         };
     }
 
-    private Show applyReserved(ShowEvent.SeatReserved seatReserved) {
+    public Show applyReserved(ShowEvent.SeatReserved seatReserved) {
         Seat seat = getSeatOrThrow(seatReserved.seatNumber());
         return new Show(id, title, seats.put(seat.number(), seat.reserved()),
                 pendingReservations.put(seatReserved.reservationId(), seatReserved.seatNumber()),
                 finishedReservations,seatReserved.availableSeatsCount());
     }
 
-    private Show applyReservationPaid(ShowEvent.SeatReservationPaid seatReservationPaid) {
+    public Show applyReservationPaid(ShowEvent.SeatReservationPaid seatReservationPaid) {
         Seat seat = getSeatOrThrow(seatReservationPaid.seatNumber());
         String reservationId = seatReservationPaid.reservationId();
-        FinishedReservation finishedReservation = new FinishedReservation(reservationId, seat.number(), CONFIRMED);
+        FinishedReservation finishedReservation = new FinishedReservation(reservationId, seat.number()/*, CONFIRMED*/);
         return new Show(id, title, seats.put(seat.number(), seat.paid()),
                 pendingReservations.remove(reservationId),
                 finishedReservations.put(reservationId, finishedReservation),availableSeats());
 
     }
 
-    private Show applyReservationCancelled(ShowEvent.SeatReservationCancelled seatReservationCancelled) {
+    public Show applyReservationCancelled(ShowEvent.SeatReservationCancelled seatReservationCancelled) {
         Seat seat = getSeatOrThrow(seatReservationCancelled.seatNumber());
         String reservationId = seatReservationCancelled.reservationId();
-        FinishedReservation finishedReservation = new FinishedReservation(reservationId, seat.number(), CANCELLED);
+        FinishedReservation finishedReservation = new FinishedReservation(reservationId, seat.number()/*, CANCELLED*/);
         return new Show(id, title, seats.put(seat.number(), seat.available()),
                 pendingReservations.remove(reservationId),
                 finishedReservations.put(reservationId, finishedReservation),seatReservationCancelled.availableSeatsCount());
@@ -140,10 +128,6 @@ public record Show(String id, String title, Map<Integer, Seat> seats,
         return seats.get(seatNumber);
     }
 
-    public enum ReservationStatus {
-      CONFIRMED, CANCELLED
-    }
-
     public enum SeatReservationStatus {
       STARTED, SEAT_RESERVED, WALLET_CHARGE_REJECTED, WALLET_CHARGED, COMPLETED, SEAT_RESERVATION_FAILED, WALLET_REFUNDED, SEAT_RESERVATION_REFUNDED
     }
@@ -152,15 +136,7 @@ public record Show(String id, String title, Map<Integer, Seat> seats,
       AVAILABLE, RESERVED, PAID
     }
 
-    public static final record FinishedReservation(String reservationId, int seatNumber, ReservationStatus status) {
-      public boolean isConfirmed() {
-        return status == CONFIRMED;
-      }
-
-      public boolean isCancelled() {
-        return status == CANCELLED;
-      }
-    }
+    public static final record FinishedReservation(String reservationId, int seatNumber) { }
 
     public static final record InitialShow(String id, String title, List<Seat> seats) implements Serializable {
     }

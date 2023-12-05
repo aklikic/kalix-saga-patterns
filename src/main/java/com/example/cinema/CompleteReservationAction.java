@@ -1,7 +1,6 @@
-package com.example.cinema.choreography;
+package com.example.cinema;
 
-import com.example.cinema.ShowEntity;
-import com.example.cinema.choreography.reservation.ReservationEntity;
+import com.example.cinema.reservation.ReservationEntity;
 import com.example.cinema.model.Show;
 import com.example.wallet.WalletEntity;
 import kalix.javasdk.action.Action;

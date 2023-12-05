@@ -1,4 +1,4 @@
-package com.example.cinema.choreography.reservation;
+package com.example.cinema.reservation;
 
 import com.example.cinema.model.Show;
 import io.grpc.Status;

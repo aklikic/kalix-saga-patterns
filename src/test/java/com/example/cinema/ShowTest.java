@@ -163,45 +163,45 @@ class ShowTest {
     assertThat(updatedShow.pendingReservations().get(reservationId).isEmpty()).isTrue();
   }
 
-  @Test
-  public void shouldRejectCancellationDuplicate() {
-    //given
-    var reservedSeat = new Show.Seat(2, Show.SeatStatus.RESERVED, new BigDecimal("123"));
-    var reservationId = randomReservationId();
-    var show = showBuilder().withRandomSeats().withSeatReservation(reservedSeat, reservationId).build();
-    var cancelSeatReservation = new CancelSeatReservation(reservationId);
+//  @Test
+//  public void shouldRejectCancellationDuplicate() {
+//    //given
+//    var reservedSeat = new Show.Seat(2, Show.SeatStatus.RESERVED, new BigDecimal("123"));
+//    var reservationId = randomReservationId();
+//    var show = showBuilder().withRandomSeats().withSeatReservation(reservedSeat, reservationId).build();
+//    var cancelSeatReservation = new CancelSeatReservation(reservationId);
+//
+//    //when
+//    var event = show.process(cancelSeatReservation).get();
+//    var updatedShow = show.apply(event);
+//
+//    //then
+//    assertThat(event).isInstanceOf(SeatReservationCancelled.class);
+//
+//    //when
+//    CinemaApiModel.ShowCommandError result = updatedShow.process(cancelSeatReservation).getLeft();
+//
+//    //then
+//    assertThat(result).isEqualTo(DUPLICATED_COMMAND);
+//  }
 
-    //when
-    var event = show.process(cancelSeatReservation).get();
-    var updatedShow = show.apply(event);
-
-    //then
-    assertThat(event).isInstanceOf(SeatReservationCancelled.class);
-
-    //when
-    CinemaApiModel.ShowCommandError result = updatedShow.process(cancelSeatReservation).getLeft();
-
-    //then
-    assertThat(result).isEqualTo(DUPLICATED_COMMAND);
-  }
-
-  @Test
-  public void shouldConfirmAfterCancellation() {
-    //given
-    var reservedSeat = new Show.Seat(2, Show.SeatStatus.RESERVED, new BigDecimal("123"));
-    var reservationId = randomReservationId();
-    var show = showBuilder().withRandomSeats().withSeatReservation(reservedSeat, reservationId).build();
-    var cancelSeatReservation = new CancelSeatReservation(reservationId);
-    var confirmReservationPayment = new CinemaApiModel.ShowCommand.ConfirmReservationPayment(reservationId);
-    var event = show.process(cancelSeatReservation).get();
-    var updatedShow = show.apply(event);
-
-    //when
-    var result = updatedShow.process(confirmReservationPayment).get();
-
-    //then
-    assertThat(result).isEqualTo(new CancelledReservationConfirmed(show.id(), reservationId, reservedSeat.number()));
-  }
+//  @Test
+//  public void shouldConfirmAfterCancellation() {
+//    //given
+//    var reservedSeat = new Show.Seat(2, Show.SeatStatus.RESERVED, new BigDecimal("123"));
+//    var reservationId = randomReservationId();
+//    var show = showBuilder().withRandomSeats().withSeatReservation(reservedSeat, reservationId).build();
+//    var cancelSeatReservation = new CancelSeatReservation(reservationId);
+//    var confirmReservationPayment = new CinemaApiModel.ShowCommand.ConfirmReservationPayment(reservationId);
+//    var event = show.process(cancelSeatReservation).get();
+//    var updatedShow = show.apply(event);
+//
+//    //when
+//    var result = updatedShow.process(confirmReservationPayment).get();
+//
+//    //then
+//    assertThat(result).isEqualTo(new CancelledReservationConfirmed(show.id(), reservationId, reservedSeat.number()));
+//  }
 
   @Test
   public void shouldConfirmSeatReservation() {
@@ -221,45 +221,45 @@ class ShowTest {
     assertThat(updatedShow.pendingReservations().get(reservationId).isEmpty()).isTrue();
   }
 
-  @Test
-  public void shouldRejectConfirmationDuplicate() {
-    //given
-    var reservedSeat = new Show.Seat(2, Show.SeatStatus.RESERVED, new BigDecimal("123"));
-    var reservationId = randomReservationId();
-    var show = showBuilder().withRandomSeats().withSeatReservation(reservedSeat, reservationId).build();
-    var confirmReservationPayment = new ConfirmReservationPayment(reservationId);
+//  @Test
+//  public void shouldRejectConfirmationDuplicate() {
+//    //given
+//    var reservedSeat = new Show.Seat(2, Show.SeatStatus.RESERVED, new BigDecimal("123"));
+//    var reservationId = randomReservationId();
+//    var show = showBuilder().withRandomSeats().withSeatReservation(reservedSeat, reservationId).build();
+//    var confirmReservationPayment = new ConfirmReservationPayment(reservationId);
+//
+//    //when
+//    var event = show.process(confirmReservationPayment).get();
+//    var updatedShow = show.apply(event);
+//
+//    //then
+//    assertThat(event).isInstanceOf(SeatReservationPaid.class);
+//
+//    //when
+//    CinemaApiModel.ShowCommandError result = updatedShow.process(confirmReservationPayment).getLeft();
+//
+//    //then
+//    assertThat(result).isEqualTo(DUPLICATED_COMMAND);
+//  }
 
-    //when
-    var event = show.process(confirmReservationPayment).get();
-    var updatedShow = show.apply(event);
-
-    //then
-    assertThat(event).isInstanceOf(SeatReservationPaid.class);
-
-    //when
-    CinemaApiModel.ShowCommandError result = updatedShow.process(confirmReservationPayment).getLeft();
-
-    //then
-    assertThat(result).isEqualTo(DUPLICATED_COMMAND);
-  }
-
-  @Test
-  public void shouldRejectCancellationAfterConfirmation() {
-    //given
-    var reservedSeat = new Show.Seat(2, Show.SeatStatus.RESERVED, new BigDecimal("123"));
-    var reservationId = randomReservationId();
-    var show = showBuilder().withRandomSeats().withSeatReservation(reservedSeat, reservationId).build();
-    var confirmReservationPayment = new ConfirmReservationPayment(reservationId);
-    var cancelSeatReservation = new CancelSeatReservation(reservationId);
-    var event = show.process(confirmReservationPayment).get();
-    var updatedShow = show.apply(event);
-
-    //when
-    CinemaApiModel.ShowCommandError result = updatedShow.process(cancelSeatReservation).getLeft();
-
-    //then
-    assertThat(result).isEqualTo(CANCELLING_CONFIRMED_RESERVATION);
-  }
+//  @Test
+//  public void shouldRejectCancellationAfterConfirmation() {
+//    //given
+//    var reservedSeat = new Show.Seat(2, Show.SeatStatus.RESERVED, new BigDecimal("123"));
+//    var reservationId = randomReservationId();
+//    var show = showBuilder().withRandomSeats().withSeatReservation(reservedSeat, reservationId).build();
+//    var confirmReservationPayment = new ConfirmReservationPayment(reservationId);
+//    var cancelSeatReservation = new CancelSeatReservation(reservationId);
+//    var event = show.process(confirmReservationPayment).get();
+//    var updatedShow = show.apply(event);
+//
+//    //when
+//    CinemaApiModel.ShowCommandError result = updatedShow.process(cancelSeatReservation).getLeft();
+//
+//    //then
+//    assertThat(result).isEqualTo(CANCELLING_CONFIRMED_RESERVATION);
+//  }
 
   @Test
   public void shouldNotCancelReservationOfAvailableSeat() {

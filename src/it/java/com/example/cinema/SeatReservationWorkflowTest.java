@@ -1,9 +1,9 @@
-package com.example.cinema.orchestration;
+package com.example.cinema;
 
 import com.example.Main;
 import com.example.cinema.Calls;
 import com.example.cinema.model.Show;
-import com.example.cinema.orchestration.SeatReservationWorkflow.ReserveSeat;
+import com.example.cinema.SeatReservationWorkflow.ReserveSeat;
 import com.example.wallet.model.WalletApiModel;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +37,9 @@ class SeatReservationWorkflowTest {
   @Autowired
   private Calls calls;
 
+    @Autowired
+    private WalletCalls walletCalls;
+
   private Duration timeout = Duration.ofSeconds(10);
 
   @Test
@@ -47,7 +50,7 @@ class SeatReservationWorkflowTest {
     var reservationId = randomId();
     var seatNumber = 10;
 
-    calls.createWallet(walletId, 200);
+    walletCalls.createWallet(walletId, 200);
     calls.createShow(showId, "pulp fiction");
 
     ReserveSeat reserveSeat = new ReserveSeat(showId, seatNumber, new BigDecimal(100), walletId);
@@ -64,7 +67,7 @@ class SeatReservationWorkflowTest {
         Show.SeatReservationStatus status = getReservationStatus(reservationId);
         assertThat(status).isEqualTo(Show.SeatReservationStatus.COMPLETED);
 
-        WalletApiModel.WalletResponse walletResponse = calls.getWallet(walletId);
+        WalletApiModel.WalletResponse walletResponse = walletCalls.getWallet(walletId);
         assertThat(walletResponse.balance()).isEqualTo(new BigDecimal(200 - 100));
 
         Show.SeatStatus seatStatus = calls.getSeatStatus(showId, seatNumber);
@@ -80,7 +83,7 @@ class SeatReservationWorkflowTest {
     var reservationId = randomId();
     var seatNumber = 10;
 
-    calls.createWallet(walletId, 50);
+    walletCalls.createWallet(walletId, 50);
     calls.createShow(showId, "pulp fiction");
 
     ReserveSeat reserveSeat = new ReserveSeat(showId, seatNumber, new BigDecimal(100), walletId);
@@ -97,7 +100,7 @@ class SeatReservationWorkflowTest {
         Show.SeatReservationStatus status = getReservationStatus(reservationId);
         assertThat(status).isEqualTo(Show.SeatReservationStatus.SEAT_RESERVATION_FAILED);
 
-        WalletApiModel.WalletResponse walletResponse = calls.getWallet(walletId);
+        WalletApiModel.WalletResponse walletResponse = walletCalls.getWallet(walletId);
         assertThat(walletResponse.balance()).isEqualTo(new BigDecimal(50));
 
         Show.SeatStatus seatStatus = calls.getSeatStatus(showId, seatNumber);
@@ -113,7 +116,7 @@ class SeatReservationWorkflowTest {
     var reservationId = "42";
     var seatNumber = 10;
 
-    calls.createWallet(walletId, 200);
+      walletCalls.createWallet(walletId, 200);
     calls.createShow(showId, "pulp fiction");
 
     ReserveSeat reserveSeat = new ReserveSeat(showId, seatNumber, new BigDecimal(100), walletId);
@@ -123,7 +126,7 @@ class SeatReservationWorkflowTest {
     assertThat(reservationResponse.getStatusCode()).isEqualTo(OK);
 
     //simulating charging after timeout
-    calls.chargeWallet(walletId, new ChargeWallet(new BigDecimal(100), reservationId, randomId()));
+      walletCalls.chargeWallet(walletId, reservationId, new ChargeWallet(new BigDecimal(100), randomId()));
 
     //then
     await()
@@ -134,7 +137,7 @@ class SeatReservationWorkflowTest {
         Show.SeatReservationStatus status = getReservationStatus(reservationId);
         assertThat(status).isEqualTo(SEAT_RESERVATION_REFUNDED);
 
-        WalletApiModel.WalletResponse walletResponse = calls.getWallet(walletId);
+        WalletApiModel.WalletResponse walletResponse = walletCalls.getWallet(walletId);
         assertThat(walletResponse.balance()).isEqualTo(new BigDecimal(200));
 
         Show.SeatStatus seatStatus = calls.getSeatStatus(showId, seatNumber);

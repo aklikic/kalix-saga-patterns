@@ -46,19 +46,19 @@ public class WalletEntity extends EventSourcedEntity<Wallet, WalletEvent> {
   @PostMapping("/create/{initialBalance}")
   public Effect<CinemaApiModel.Response> create(@PathVariable String id, @PathVariable int initialBalance) {
     CreateWallet createWallet = new CreateWallet(id, BigDecimal.valueOf(initialBalance));
-    return currentState().process(createWallet).fold(
+    return currentState().handleCreate(createWallet).fold(
       error -> errorEffect(error, createWallet),
       event -> persistEffect(event, "wallet created", createWallet)
     );
   }
 
-  @PatchMapping("/charge")
-  public Effect<CinemaApiModel.Response> charge(@RequestBody ChargeWallet chargeWallet) {
-    if (chargeWallet.expenseId().equals("42") && commandContext().metadata().get("skip-failure-simulation").isEmpty()) {
+  @PatchMapping("/charge/{expenseId}")
+  public Effect<CinemaApiModel.Response> charge(@PathVariable String expenseId, @RequestBody ChargeWallet chargeWallet) {
+    if (expenseId.equals("42") && commandContext().metadata().get("skip-failure-simulation").isEmpty()) {
       logger.info("charging failed");
       return effects().error("Unexpected error for expenseId=42", INVALID_ARGUMENT);
     } else {
-      return currentState().process(chargeWallet).fold(
+      return currentState().handleCharge(expenseId, chargeWallet).fold(
         error -> errorEffect(error, chargeWallet),
         event -> persistEffect(event, e -> {
           if (e instanceof WalletChargeRejected) {
@@ -71,9 +71,9 @@ public class WalletEntity extends EventSourcedEntity<Wallet, WalletEvent> {
     }
   }
 
-  @PatchMapping("/refund")
-  public Effect<CinemaApiModel.Response> refund(@RequestBody Refund refund) {
-    return currentState().process(refund).fold(
+  @PatchMapping("/refund/{expenseId}")
+  public Effect<CinemaApiModel.Response> refund(@PathVariable String expenseId, @RequestBody Refund refund) {
+    return currentState().handleRefund(expenseId, refund).fold(
       error -> {
         if (error == EXPENSE_NOT_FOUND) {
           return effects().reply(Success.of("ignoring"));
@@ -82,14 +82,6 @@ public class WalletEntity extends EventSourcedEntity<Wallet, WalletEvent> {
         }
       },
       event -> persistEffect(event, "funds deposited", refund)
-    );
-  }
-
-  @PatchMapping("/deposit")
-  public Effect<CinemaApiModel.Response> deposit(@RequestBody DepositFunds depositFunds) {
-    return currentState().process(depositFunds).fold(
-      error -> errorEffect(error, depositFunds),
-      event -> persistEffect(event, "funds deposited", depositFunds)
     );
   }
 
@@ -140,10 +132,10 @@ public class WalletEntity extends EventSourcedEntity<Wallet, WalletEvent> {
     return currentState().apply(walletRefunded);
   }
 
-  @EventHandler
-  public Wallet onEvent(FundsDeposited fundsDeposited) {
-    return currentState().apply(fundsDeposited);
-  }
+//  @EventHandler
+//  public Wallet onEvent(FundsDeposited fundsDeposited) {
+//    return currentState().apply(fundsDeposited);
+//  }
 
   @EventHandler
   public Wallet onEvent(WalletChargeRejected walletCharged) {

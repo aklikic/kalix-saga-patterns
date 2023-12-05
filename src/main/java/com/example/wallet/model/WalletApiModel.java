@@ -14,14 +14,14 @@ public interface WalletApiModel {
         record CreateWallet(String walletId, BigDecimal initialAmount) implements WalletCommand {
         }
 
-        record ChargeWallet(BigDecimal amount, String expenseId, String commandId) implements RequiresDeduplicationCommand {
+        record ChargeWallet(BigDecimal amount/*, String expenseId*/, String commandId) implements RequiresDeduplicationCommand {
         }
 
-        record Refund(String expenseId, String commandId) implements RequiresDeduplicationCommand {
+        record Refund(/*String expenseId,*/ String commandId) implements RequiresDeduplicationCommand {
         }
 
-        record DepositFunds(BigDecimal amount, String commandId) implements RequiresDeduplicationCommand {
-        }
+//        record DepositFunds(BigDecimal amount, String commandId) implements RequiresDeduplicationCommand {
+//        }
     }
 
     enum WalletCommandError {

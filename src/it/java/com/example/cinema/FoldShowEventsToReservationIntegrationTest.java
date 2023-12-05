@@ -1,4 +1,4 @@
-package com.example.cinema.choreography;
+package com.example.cinema;
 
 import com.example.Main;
 import com.example.cinema.Calls;

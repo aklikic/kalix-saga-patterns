@@ -1,4 +1,4 @@
-package com.example.cinema.choreography.reservation;
+package com.example.cinema.reservation;
 
 import com.example.cinema.ShowEntity;
 import com.google.protobuf.any.Any;
@@ -31,11 +31,6 @@ public class FoldShowEventsToReservationAction extends Action {
   public Effect<String> onEvent(SeatReservationPaid paid) {
     return effects().forward(deleteReservation(paid.reservationId()));
   }
-
-//  alternatively we can use dedicated event for the cancellation after a failure
-//  public Effect<String> onEvent(SeatReservationCancelled cancelled) {
-//    return effects().forward(deleteReservation(cancelled.reservationId()));
-//  }
 
   private DeferredCall<Any, String> createReservation(SeatReserved reserved) {
     return componentClient.forValueEntity(reserved.reservationId())

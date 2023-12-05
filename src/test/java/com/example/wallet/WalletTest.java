@@ -20,7 +20,7 @@ class WalletTest {
     var createWallet = new CreateWallet("1", BigDecimal.TEN);
 
     //when
-    var event = wallet.process(createWallet).get();
+    var event = wallet.handleCreate(createWallet).get();
     var updatedWallet = wallet.apply(event);
 
     //then
@@ -35,50 +35,20 @@ class WalletTest {
     var createWallet = new CreateWallet("1", BigDecimal.TEN);
 
     //when
-    var error = wallet.process(createWallet).getLeft();
+    var error = wallet.handleCreate(createWallet).getLeft();
 
     //then
     assertThat(error).isEqualTo(WALLET_ALREADY_EXISTS);
   }
 
   @Test
-  public void shouldDepositFunds() {
-    //given
-    var wallet = new Wallet("1", BigDecimal.TEN);
-    var depositFunds = new DepositFunds(BigDecimal.TEN, randomCommandId());
-
-    //when
-    var event = wallet.process(depositFunds).get();
-    var updatedWallet = wallet.apply(event);
-
-    //then
-    assertThat(updatedWallet.balance()).isEqualTo(BigDecimal.valueOf(20));
-  }
-
-  @Test
-  public void shouldRejectDuplicatedDeposit() {
-    //given
-    var wallet = new Wallet("1", BigDecimal.TEN);
-    var depositFunds = new DepositFunds(BigDecimal.TEN, randomCommandId());
-
-    var event = wallet.process(depositFunds).get();
-    var updatedWallet = wallet.apply(event);
-
-    //when
-    var error = updatedWallet.process(depositFunds).getLeft();
-
-    //then
-    assertThat(error).isEqualTo(DUPLICATED_COMMAND);
-  }
-
-  @Test
   public void shouldChargeWallet() {
     //given
     var wallet = new Wallet("1", BigDecimal.TEN);
-    var chargeWallet = new ChargeWallet(BigDecimal.valueOf(3), "abc", randomCommandId());
+    var chargeWallet = new ChargeWallet(BigDecimal.valueOf(3), randomCommandId());
 
     //when
-    var event = wallet.process(chargeWallet).get();
+    var event = wallet.handleCharge("abc", chargeWallet).get();
     var updatedWallet = wallet.apply(event);
 
     //then
@@ -89,13 +59,13 @@ class WalletTest {
   public void shouldRejectDuplicatedCharge() {
     //given
     var wallet = new Wallet("1", BigDecimal.TEN);
-    var chargeWallet = new ChargeWallet(BigDecimal.valueOf(3), "abc", randomCommandId());
+    var chargeWallet = new ChargeWallet(BigDecimal.valueOf(3), randomCommandId());
 
-    var event = wallet.process(chargeWallet).get();
+    var event = wallet.handleCharge("abc", chargeWallet).get();
     var updatedWallet = wallet.apply(event);
 
     //when
-    var error = updatedWallet.process(chargeWallet).getLeft();
+    var error = updatedWallet.handleCharge("abc", chargeWallet).getLeft();
 
     //then
     assertThat(error).isEqualTo(DUPLICATED_COMMAND);

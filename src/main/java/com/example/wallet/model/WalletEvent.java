@@ -20,10 +20,6 @@ sealed public interface WalletEvent {
                           String commandId) implements WalletEvent {
     }
 
-    @TypeName("funds-deposited")
-    record FundsDeposited(String walletId, BigDecimal amount, String commandId) implements WalletEvent {
-    }
-
     @TypeName("wallet-charge-rejected")
     record WalletChargeRejected(String walletId, String expenseId, String commandId) implements WalletEvent {
     }
