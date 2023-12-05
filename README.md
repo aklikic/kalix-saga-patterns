@@ -22,90 +22,112 @@ Define value for property 'package' com.example: : `com.example`<br>
 
 ## Import generated project in your IDE/editor
 
-## Update main class
-1. Move `io.kx.Main` to `io.kx` package
-2. Change default annotation for `ACL` to: `@Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL))`
-3. In `pom.xml` in `<mainClass>io.kx.loan.Main</mainClass>` replace `io.kx.loanapp.Main` with `io.kx.Main`
+## pom.xml setup
+Reload the `pom.xml` after finished.
+### Add dependencies
+Add following to pom.xml:
+```
+<dependency>
+  <groupId>io.vavr</groupId>
+  <artifactId>vavr</artifactId>
+  <version>0.10.4</version>
+</dependency>
+<dependency>
+  <groupId>org.assertj</groupId>
+  <artifactId>assertj-core</artifactId>
+  <version>3.23.1</version>
+  <scope>test</scope>
+</dependency>
+<dependency>
+  <groupId>org.awaitility</groupId>
+  <artifactId>awaitility</artifactId>
+  <version>4.2.0</version>
+</dependency>
+```
+### JDK 17 additional configuration
+1. Add under `mave-compiler-plugin` plugin `configuration`:
+```
+<compilerArgs>
+   <arg>--enable-preview</arg>
+   <arg>-Xlint:deprecation</arg>
+   <arg>-parameters</arg>
+ </compilerArgs>
+```
+2. Add under `docker-maven-plugin` `configuration.images.image.entryPoint`: `<arg>--enable-preview</arg>`
+3. Add under `maven-surefire-plugin` plugin `<configuration>`: `<argLine>--enable-preview</argLine>`
+4. Add under `kalix-maven-plugin` plugin `<configuration>`:
+```
+<jvmArgs>
+   <arg>--enable-preview</arg>
+ </jvmArgs>
+```
+5. Add under `maven-failsafe-plugin` plugin `<configuration>`: `<argLine>--enable-preview</argLine>`
 
-# Loan application service
+### Control saga spring profile
+1. Add to properties: `<sagaProfile>choreography</sagaProfile>`
+2. Add under `docker-maven-plugin` `configuration.images.image.entryPoint`: `<arg>-Dspring.profiles.active=${sagaProfile}</arg>`
+3. Add under `kalix-maven-plugin` `configuration.jvmArgs`: `<arg>-Dspring.profiles.active=${sagaProfile}</arg>`
+
+# Show Entity
+
+## Setup
+
+Create package `com.example.cinema`
 
 ## Define persistence (domain)`
-1. Create interface `io.kx.loanapp.LoanAppDomain`
-2. Create enum `LoanAppDomainStatus` in interface `io.kx.loanapp.LoanAppDomain`
-3. Create Java Record `LoanAppDomainState` in interface `io.kx.loanapp.LoanAppDomain` and add parameters
-4. Create Java Interface `LoanAppDomainEvent` interface `io.kx.loanapp.LoanAppDomain` and add Java records for events `Submitted`, `Approved`, `Declined` and Jackson annotations for polymorph serialization
-5. In `LoanAppDomainState` Java Record implement `empty`, `onSubmitted`, `onApproved` and `onDeclined` methods
-
-<i><b>Tip</b></i>: Check content in `loan-app-step-1` git branch
+1. Create package `com.example.cinema.model`
+2. Implement Java Record `Show`
+3. Implement sealed interface `ShowEvent`
+   <i><b>Tip</b></i>: Check content in `step-1-show-entity` git branch
 
 ## Define API data structure and endpoints
-1. Create Java Interface `LoanAppApi` and add Java Records for requests and responses
-3. Create class `LoanAppEntity` extending `EventSourcedEntity<LoanAppDomain.LoanAppDomainState, LoanAppDomain.LoanAppDomainEvent>`
-   1. add class level annotations (event sourcing entity configuration):
-   ```
-   @Id("loanAppId")
-   @TypeId("loanapp")
-   @RequestMapping("/loanapp/{loanAppId}")
-   ```
-   2. add class level annotations (path prefix):
-   ```
-   @RequestMapping("/loanapp/{loanAppId}")
-   ```
-   3. Override `emptyState` and return `LoanAppDomain.LoanAppDomainState.empty()`, set loanAppId via `EventSourcedEntityContext` injected through the constructor
-   4. Implement each request method and event handlers and annotate with `@EventHandler`
-
-<i><b>Tip</b></i>: Check content in `loan-app-step-1` git branch
+1. Implement interface `CinemaApiModel` with `ShowCommand`,`Response` and `ShowResponse`
+2. Implement class `ShowEntity`
+   <i><b>Tip</b></i>: Check content in `step-1-show-entity` git branch
 
 
 ## Implement unit test
 1. Create  `src/test/java` <br>
-2. Create  `io.kx.loanapp.LoanAppEntityTest` class<br>
-3. Implement `happyPath`
-   <i><b>Tip</b></i>: Check content in `loan-app-step-1` git branch
+2. Create package `com.example.cinema`
+3. Implement helper classes `DomainGenerators`, `ShowBuilder` and `ShowCommandGenerators`
+4. Implement business logic state test: `ShowTest`
+6. Implement Entity test: `ShowEntityTest`<br>
+   <i><b>Tip</b></i>: Check content in `step-1-show-entity` git branch
 
 ## Run unit test
 ```
 mvn test
 ```
-## Implement integration test
-1. Edit `io.kx.loanapp.IntegrationTest` class<br>
-3. Implement `happyPath`
-   <i><b>Tip</b></i>: Check content in `loan-app-step-1` git branch
-
-## Run integration test
-```
-mvn -Pit verify
-```
-
-<i><b>Note</b></i>: Integration tests uses [TestContainers](https://www.testcontainers.org/) to span integration environment so it could require some time to download required containers.
-Also make sure docker is running.
-
 ## Run locally
-Start the service and kalix proxy:
+Start the service and kalix runtime:
 
 ```
 mvn kalix:runAll
 ```
 
 ## Test service locally
-Submit loan application:
+Create show:
 ```
 curl -XPOST -d '{
-  "clientId": "12345",
-  "clientMonthlyIncomeCents": 60000,
-  "loanAmountCents": 20000,
-  "loanDurationMonths": 12
-}' http://localhost:9000/loanapp/1/submit -H "Content-Type: application/json"
+  "title": "title",
+  "maxSeats": 100
+}' http://localhost:9000/cinema-show/1 -H "Content-Type: application/json"
 ```
-
-Get loan application:
+Reserve a seat:
 ```
-curl -XGET http://localhost:9000/loanapp/1 -H "Content-Type: application/json"
+curl -XPATCH -d '{
+  "walletId": "title",
+  "reservationId": "res1",
+  "seatNumber": 1
+}' http://localhost:9000/cinema-show/1/reserve -H "Content-Type: application/json"
 ```
-
-Approve:
+Confirm seat payment:
 ```
-curl -XPOST http://localhost:9000/loanapp/1/approve -H "Content-Type: application/json"
+curl -XPATCH http://localhost:9000/cinema-show/1/confirm-payment/res1 -H "Content-Type: application/json"
+```
+Get:
+```
+curl -XGET http://localhost:9000/cinema-show/1 -H "Content-Type: application/json"
 ```
 
 ### Deploy
@@ -125,7 +147,7 @@ curl -XPOST http://localhost:9000/loanapp/1/approve -H "Content-Type: applicatio
 
    3. Create a project
     ```
-    kalix projects new loan-application-java --region=gcp-us-east1
+    kalix projects new cinema-booking --region=gcp-us-east1
     ```
    **Note**: `gcp-is-east1` is currently the only available region for deploying trial projects. For non-trial projects you can select Cloud Provider and regions of your choice<br>
 
@@ -141,10 +163,10 @@ curl -XPOST http://localhost:9000/loanapp/1/approve -H "Content-Type: applicatio
    **Note**: The command will output Kalix user details and column `USERNAME` will be used to configure `dockerImage` in `pom.xml`<br>
 3. Configure `dockerImage` path in `pom.xml`
    Replace `my-docker-repo` in `dockerImage` in `pom.xml` with: <br>
-   `Kalix Container Registry (KCR)` path + `/` + `USERNAME` + `/loan-application-java`<br>
+   `Kalix Container Registry (KCR)` path + `/` + `USERNAME` + `/cinema-booking`<br>
    **Example** where `Kalix Container Registry (KCR)` path is `kcr.us-east-1.kalix.io` and `USERNAME` is `myuser`:<br>
 ```
-<dockerImage>kcr.us-east-1.kalix.io/myuser/loan-application-java/${project.artifactId}</dockerImage>
+<dockerImage>kcr.us-east-1.kalix.io/myuser/cinema-booking/${project.artifactId}</dockerImage>
 ```
 4. Deploy service in Kalix project:
  ```
@@ -164,277 +186,124 @@ Result:
 ```
 kalix service list                                                                         
 NAME                                         AGE    REPLICAS   STATUS        IMAGE TAG                     
-loan-application-java                        50s    0          Ready         1.0-SNAPSHOT                  
+cinema-booking-java                          50s    0          Ready         1.0-SNAPSHOT                  
 ```
 **Note**: When deploying service for the first time it can take up to 1 minute for internal provisioning
 
 ## Test service in production
 Proxy connection to Kalix service via Kalix CLI
 ```
-kalix service proxy loan-application-java
+kalix service proxy cinema-booking-java --port 9000
 ```
 Proxy Kalix CLI command will expose service proxy connection on `localhost:8080` <br>
 
-Submit loan application:
+Create show:
 ```
 curl -XPOST -d '{
-  "clientId": "12345",
-  "clientMonthlyIncomeCents": 60000,
-  "loanAmountCents": 20000,
-  "loanDurationMonths": 12
-}' http://localhost:8080/loanapp/1/submit -H "Content-Type: application/json"
+  "title": "title",
+  "maxSeats": 100
+}' http://localhost:8080/cinema-show/1 -H "Content-Type: application/json"
 ```
-Get loan application:
+Reserve a seat:
 ```
-curl -XGET http://localhost:8080/loanapp/1 -H "Content-Type: application/json"
+curl -XPATCH -d '{
+  "walletId": "title",
+  "reservationId": "res1",
+  "seatNumber": 1
+}' http://localhost:8080/cinema-show/1/reserve -H "Content-Type: application/json"
 ```
-Approve:
+Confirm seat payment:
 ```
-curl -XPOST http://localhost:8080/loanapp/1/approve -H "Content-Type: application/json"
+curl -XPATCH http://localhost:8080/cinema-show/1/confirm-payment/res1 -H "Content-Type: application/json"
+```
+Get:
+```
+curl -XGET http://localhost:8080/cinema-show/1 -H "Content-Type: application/json"
 ```
 
-# Loan application processing service
-## Create loan application processing packages
-Create package `io.kx.loanproc` in `main` and `test` <br>
-## Define persistence (domain)`
-1. Create interface `io.kx.loanproc.LoanProcDomain`
-2. Create enum `LoanProcDomainStatus` in interface `io.kx.loanproc.LoanProcDomain`
-3. Create Java Record `LoanProcDomainState` in interface `io.kx.loanproc.LoanProcDomain` and add parameters
-4. Create Java Interface `LoanProcDomainEvent` interface `io.kx.loanproc.LoanProcDomain` and add Java records for events `ReadyForReview`, `Approved`, `Declined` and `TypeName` annotations for not using class names
-5. In `LoanAppDomainState` Java Record implement `empty`, `onReadyForReview`, `onApproved` and `onDeclined` methods
+# Shows by available seats View
+## Define View data structures
+1. In interface `CinemaApiModel` add `ShowsByAvailableSeatsViewRecord` and `ShowsByAvailableSeatsRecordList`
+2. Implement class `ShowsByAvailableSeatsView`
+   <i><b>Tip</b></i>: Check content in `step-2-shows-view` git branch
 
-<i><b>Tip</b></i>: Check content in `loan-proc-step-2` git branch
-
-## Define API data structure and endpoints
-1. Create Java Interface `LoanProcApi` and add Java Records for requests and responses
-3. Create class `LoanProcEntity` extending `EventSourcedEntity<LoanProcDomain.LoanProcDomainState, LoanProcDomain.LoanProcDomainEvent>`
-   1. add class level annotations (event sourcing entity configuration):
-   ```
-   @Id("loanAppId")
-   @TypeId("loanproc")
-   @RequestMapping("/loanproc/{loanAppId}")
-   ```
-   2. add class level annotations (path prefix):
-   ```
-   @RequestMapping("/loanproc/{loanAppId}")
-   ```
-   3. Override `emptyState` and return `LoanProcDomain.LoanProcDomainState.empty()`, set loanAppId via `EventSourcedEntityContext` injected through the constructor
-   4. Implement each request method and event handlers and annotate with `@EventHandler`
-
-<i><b>Tip</b></i>: Check content in `loan-proc-step-2` git branch
-
-
-## Implement unit test
-1. Create  package `io.kx.loanproc` in `src/test/java` <br>
-2. Create  `io.kx.loanproc.LoanProcEntityTest` class<br>
-3. Implement `happyPath`
-   <i><b>Tip</b></i>: Check content in `loan-proc-step-2` git branch
-
-## Run unit test
-```
-mvn test
-```
 ## Implement integration test
-1. Edit `io.kx.loanproc.IntegrationTest` class<br>
-3. Implement `happyPath`
-   <i><b>Tip</b></i>: Check content in `loan-proc-step-2` git branch
+1. Delete `IntegrationTest` in `src/itjava.com.example`
+2. Create package `cinema`
+3. Add helper classes: `TestUtils`, `Calls` (with all Show related endpoints only)
+4. Implement integration test `ShowsByAvailableSeatsViewIntegrationTest`
 
 ## Run integration test
 ```
 mvn -Pit verify
 ```
+## Test service locally
+Create show:
+```
+curl -XPOST -d '{
+  "title": "title",
+  "maxSeats": 100
+}' http://localhost:9000/cinema-show/1 -H "Content-Type: application/json"
+```
+Search view:
+```
+curl -XGET http://localhost:9000/cinema-shows/by-available-seats/1 -H "Content-Type: application/json"
+```
+# Wallet Entity
+## Setup
 
-<i><b>Note</b></i>: Integration tests uses [TestContainers](https://www.testcontainers.org/) to span integration environment so it could require some time to download required containers.
-Also make sure docker is running.
+Create package `com.example.wallet`
 
+## Define persistence (domain)`
+1. Create package `com.example.wallet.model`
+2. Implement Java Record `Wallet`
+3. Implement sealed interface `WalletEvent`
+   <i><b>Tip</b></i>: Check content in `step-3-wallet-entity` git branch
+
+## Define API data structure and endpoints
+1. Implement interface `WalletApiModel` with `WalletCommand` and `WalletResponse`
+2. Implement class `WalletEntity`
+   <i><b>Tip</b></i>: Check content in `step-3-wallet-entity` git branch
+
+## Implement unit test
+2. Create package `com.example.wallet`
+3. Implement helper classes `DomainGenerators`
+4. Implement business logic state test: `WalletTest`
+6. Implement Entity test: `WalletEntityTest`<br>
+   <i><b>Tip</b></i>: Check content in `step-3-wallet-entity` git branch
+
+## Run unit test
+```
+mvn test
+```
 ## Run locally
-Start the service and kalix proxy:
+Start the service and kalix runtime:
 
 ```
 mvn kalix:runAll
 ```
 
 ## Test service locally
-Start processing:
+Create wallet with initial balance:
 ```
-curl -XPOST http://localhost:9000/loanproc/1/process -H "Content-Type: application/json"
+curl -XPOST http://localhost:9000/wallet/1/create/100 -H "Content-Type: application/json"
 ```
-
-Get loan processing:
+Charge:
 ```
-curl -XGET http://localhost:9000/loanproc/1 -H "Content-Type: application/json"
+curl -XPATCH -d '{
+  "amount": 50,
+  "expenseId": "exp1",
+  "commandId": "exp1"
+}' http://localhost:9000/wallet/1/charge -H "Content-Type: application/json"
 ```
-Approve:
+Get:
 ```
-curl -XPOST -d '{"reviewerId":"9999"}' http://localhost:9000/loanproc/1/approve -H "Content-Type: application/json"
-```
-### Re-Deploy
-```
-mvn deploy kalix:deploy
-```
-```
-kalix service list
-NAME                    AGE   INSTANCES   STATUS             IMAGE TAG                     
-loan-application-java   32m   1           UpdateInProgress   1.0-SNAPSHOT
-```
-## Test service in production
-Proxy connection to Kalix service via Kalix CLI
-```
-kalix service proxy loan-application-java
-```
-Proxy Kalix CLI command will expose service proxy connection on `localhost:8080` <br>
-
-Start processing:
-```
-curl -XPOST http://localhost:8080/loanproc/1/process -H "Content-Type: application/json"
+curl -XGET http://localhost:9000/wallet/1 -H "Content-Type: application/json"
 ```
 
-Get loan processing:
-```
-curl -XGET http://localhost:8080/loanproc/1 -H "Content-Type: application/json"
-```
-Approve:
-```
-curl -XPOST -d '{"reviewerId":"9999"}' http://localhost:8080/loanproc/1/approve -H "Content-Type: application/json"
-```
-# Views
-## Create a view
-1. Create package `io.kx.loanproc.view`
-2. Create Java Interface `io.kx.loanproc.view.LoanProcViewModel` with Java records for `ViewRecord` and `ViewRequest`
-3. Create `io.kx.loanproc.viewLoanProcByStatusView` class extending `View`
-   1. Add class level annotation for table name: `@Table("loanproc_by_status")`
-   2. Implement getLoanProcByStatus with `@Query` and `@PostMapping` annotations
-   3. Implement event handler methods for each domain event
+# Choreography Saga
 
-<i><b>Tip</b></i>: Check content in `views-step-3` git branch
 
-##Unit test
-Because of the nature of views only Integration tests are done.
 
-## Create integration tests for view
-In `io.kx.loanproc.IntegrationTest` copy `loanProcHappyPath` test to `loanProcHappyPathWithView` and add view query via `componentClient`
-<i><b>Tip</b></i>: Check content in `views-step-3` git branch
 
-## Run integration test
-```
-mvn -Pit verify
-```
-## Package & Deploy
-```
-mvn deploy kalix:deploy
-```
-## Test service in production
-Proxy connection to Kalix service via Kalix CLI
-```
-kalix service proxy loan-application-java
-```
-```
-curl -XPOST -d {"statusId":"STATUS_APPROVED"} http://localhost:8080/loanproc/views/by-status -H "Content-Type: application/json"
-```
-# Eventing - Event driven communication
-## Action for submitted event (Loan application service -> Loan application processing service)
-1. Create `io.kx.loanapp.LoanAppToLoanProcEventingAction` class extending `Action`
-2. Add class level annotation: `@Subscribe.EventSourcedEntity(value = LoanAppEntity.class, ignoreUnknown = true)`
-3. Inject `ComponentClient` via constructor
-4. Implement `onSubmitted` event handler method
 
-<i><b>Tip</b></i>: Check content in `eventing-step-4` git branch
-
-## Action for approved & declined processing event (Loan application processing service -> Loan application service)
-1. Create `io.kx.loanproc.LoanProcToLoanAppEventingAction` class extending `Action`
-2. Add class level annotation: `@Subscribe.EventSourcedEntity(value = LoanProcEntity.class, ignoreUnknown = true)`
-3. Inject `ComponentClient` via constructor
-4. Implement `onApproved` and `onDeclined` event handler methods
-
-<i><b>Tip</b></i>: Check content in `eventing-step-4` git branch
-
-## Create integration tests for eventing (end-to-end test)
-Update `io.kx.IntegrationTest` and add `endToEndHappyPath` and `endToEndHappyPathWithDecline` test
-<i><b>Tip</b></i>: Check content in `eventing-step-4` git branch
-## Run integration test
-```
-mvn -Pit verify
-```
-## Package & Deploy
-```
-mvn deploy kalix:deploy
-```
-## Test service in production
-Proxy connection to Kalix service via Kalix CLI
-```
-kalix service proxy loan-application-java
-```
-
-Submit loan application:
-```
-curl -XPOST -d '{
-  "clientId": "12345",
-  "clientMonthlyIncomeCents": 60000,
-  "loanAmountCents": 20000,
-  "loanDurationMonths": 12
-}' http://localhost:8080/loanapp/3/submit -H "Content-Type: application/json"
-```
-Check loan processing status:
-```
-curl -XPOST -d {"statusId":"STATUS_READY_FOR_REVIEW"} http://localhost:8080/loanproc/views/by-status -H "Content-Type: application/json"
-```
-Approve loan processing:
-```
-curl -XPOST -d '{"reviewerId":"9999"}' http://localhost:8080/loanproc/3/approve -H "Content-Type: application/json"
-```
-Get loan application:
-```
-curl -XGET http://localhost:8080/loanapp/3 -H "Content-Type: application/json"
-```
-
-# Timers
-## Creating config
-1. Create class `io.kx.loanproc.LoanProcConfig`
-2. Add class level annotation:
-```
-@Configuration
-@ConfigurationProperties(prefix = "loanproc")
-```
-3. Add parameter `Integer timeoutMillis` with getter and setter
-4. In `src/main/resources/application.properties` add `loanproc.timeoutMillis = 600000`
-## Action for managing timer for timeout
-1. Create `io.kx.loanproc.LoanProcTimeoutAction` class extending `Action`
-2. Add class level annotation `@Subscribe.EventSourcedEntity(value = LoanProcEntity.class, ignoreUnknown = true)`
-3. Inject `ComponentClient kalixClient` via constructor
-4. Implement `getTimerName` method
-5. Implement event handler methods for `onReadyForReview`, `onApproved` and `onDeclined`
-
-<i><b>Tip</b></i>: Check content in `timers-step-5` git branch
-## Create integration tests for eventing (end-to-end test)
-1. Create folder `src/it/resources`
-2. Create file `src/it/resources/test-application.properties` and add `loanproc.timeoutMillis = 1000`
-3. Create a new integration test class `io.kx.TimerIntegrationTest`.
-   <i><b>Tip</b></i>: Check content in `timers-step-5` git branch
-## Run integration test
-```
-mvn -Pit verify
-```
-## Package & Deploy
-```
-mvn deploy kalix:deploy
-```
-# Action as a controller (API gateway)
-## Action
-1. Create `io.kx.loanapp.LoanAppGatewayAction` class extending `Action`
-2. add class level annotations (path prefix):
-   ```
-   @RequestMapping("/loanapp-gw")
-   ```
-3. add `submit` method
-   <i><b>Tip</b></i>: Check content in `controller-action-step-6` git branch
-## Integration test
-Add new test case `endToEndHappyPathWithGw` and use `loanapp-gw` instead of `loanapp` for submitting. Set `loanAppId` from the response.<br>
-<i><b>Tip</b></i>: Check content in `controller-action-step-6` git branch
-## Run integration test
-```
-mvn -Pit verify
-```
-## Package & Deploy
-```
-mvn deploy kalix:deploy
-```
